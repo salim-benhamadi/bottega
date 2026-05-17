@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+motor  
+passlib[bcrypt]  
+python-jose[cryptography]  
+python-multipart  
+google-genai  
+python-dotenv  
