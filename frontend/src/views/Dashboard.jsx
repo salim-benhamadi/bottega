@@ -391,6 +391,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
           {activeTab === 'history' && (
             <TaskHistoryTab
               taskHistory={taskHistory}
+              setTaskHistory={setTaskHistory}
               historySearch={historySearch}
               setHistorySearch={setHistorySearch}
               historyAgentFilter={historyAgentFilter}

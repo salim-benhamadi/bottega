@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 export default function TaskHistoryTab({
   taskHistory,
+  setTaskHistory,
   historySearch,
   setHistorySearch,
   historyAgentFilter,
@@ -10,6 +11,24 @@ export default function TaskHistoryTab({
   apiUrl,
 }) {
   const [exporting, setExporting] = useState(false);
+  const [approvingId, setApprovingId] = useState(null);
+
+  const handleApprove = async (taskId) => {
+    setApprovingId(taskId);
+    try {
+      const res = await fetch(`${apiUrl}/tasks/approve/${taskId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Approval failed');
+      setTaskHistory(prev => prev.map(t =>
+        t.task_id === taskId ? { ...t, pending_approval: false, approved: true } : t
+      ));
+    } catch (e) {
+      console.error(e);
+    }
+    setApprovingId(null);
+  };
 
   const filtered = taskHistory.filter(t => {
     const matchSearch = !historySearch || t.task_description?.toLowerCase().includes(historySearch.toLowerCase());
@@ -111,7 +130,7 @@ export default function TaskHistoryTab({
             {filtered.map(task => (
               <div key={task.task_id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200/50 transition-all duration-200 animate-fade-in-up">
                 <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold px-2.5 py-0.5 rounded-md">{task.agent_name || task.agent_id}</span>
                       {task.delegated && <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">A2A Swarm</span>}
@@ -120,7 +139,25 @@ export default function TaskHistoryTab({
                     </div>
                     <p className="text-sm font-semibold text-slate-800 leading-relaxed">{task.task_description}</p>
                   </div>
-                  <span className="text-xs text-slate-400 font-medium shrink-0">{new Date(task.timestamp).toLocaleString()}</span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {task.pending_approval && (
+                      <button
+                        onClick={() => handleApprove(task.task_id)}
+                        disabled={approvingId === task.task_id}
+                        className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all disabled:opacity-60 shadow-sm shadow-emerald-500/30"
+                      >
+                        {approvingId === task.task_id ? (
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                        Approve
+                      </button>
+                    )}
+                    <span className="text-xs text-slate-400 font-medium">{new Date(task.timestamp).toLocaleString()}</span>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-600 font-medium bg-slate-50 border border-slate-100 rounded-xl p-3 leading-relaxed whitespace-pre-wrap">
                   {task.result?.slice(0, 300)}{task.result?.length > 300 ? '…' : ''}
