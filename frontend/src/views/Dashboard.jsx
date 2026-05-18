@@ -486,6 +486,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               handleCreateAgent={handleCreateAgent}
               token={token}
               apiUrl={apiUrl}
+              onRefreshStats={() => fetchWithAuth('/creator/stats').then(setCreatorStats)}
             />
           )}
 

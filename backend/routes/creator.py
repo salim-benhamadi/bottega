@@ -1,6 +1,8 @@
 import json
 import re
-from fastapi import APIRouter, Depends
+import uuid
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Any
 import auth
@@ -15,11 +17,59 @@ async def get_creator_stats(current_user: str = Depends(auth.get_current_user)):
     agents = await db.marketplace_agents.find({"creator_email": current_user}).to_list(100)
     total_hires = sum(a.get("hire_count", 0) for a in agents)
     total_earnings = sum(int(a.get("price_credits", 0) * 0.15) * a.get("hire_count", 0) for a in agents)
+    bundles = await db.user_bundles.find({"creator_email": current_user}).to_list(50)
     return {
         "total_hires": total_hires,
         "total_earnings_credits": total_earnings,
         "published_agents": [{k: v for k, v in a.items() if k != "_id"} for a in agents],
+        "published_bundles": [{k: v for k, v in b.items() if k != "_id"} for b in bundles],
     }
+
+
+class BundleCreate(BaseModel):
+    name: str
+    description: str
+    agent_ids: list[str]
+    discount_pct: int = 10
+
+
+@router.post("/creator/bundles")
+async def create_creator_bundle(payload: BundleCreate, current_user: str = Depends(auth.get_current_user)):
+    if len(payload.agent_ids) < 2:
+        raise HTTPException(status_code=400, detail="At least 2 agents required")
+    agents = []
+    for aid in payload.agent_ids:
+        agent = await db.marketplace_agents.find_one({"id": aid})
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent {aid} not found")
+        agents.append(agent)
+    individual_total = sum(a.get("price_credits", 0) for a in agents)
+    bundle_price = int(individual_total * (1 - payload.discount_pct / 100))
+    bundle_doc = {
+        "id": f"ub_{uuid.uuid4().hex[:8]}",
+        "name": payload.name,
+        "description": payload.description,
+        "agent_ids": payload.agent_ids,
+        "discount_pct": payload.discount_pct,
+        "individual_total": individual_total,
+        "bundle_price": bundle_price,
+        "creator_email": current_user,
+        "is_user_bundle": True,
+        "color": "emerald",
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    await db.user_bundles.insert_one(bundle_doc)
+    bundle_doc.pop("_id", None)
+    return bundle_doc
+
+
+@router.delete("/creator/bundles/{bundle_id}")
+async def delete_creator_bundle(bundle_id: str, current_user: str = Depends(auth.get_current_user)):
+    bundle = await db.user_bundles.find_one({"id": bundle_id, "creator_email": current_user})
+    if not bundle:
+        raise HTTPException(status_code=404, detail="Bundle not found")
+    await db.user_bundles.delete_one({"id": bundle_id})
+    return {"status": "deleted"}
 
 
 SYSTEM_PROMPT = """You are an AI agent builder assistant inside Bottega, a marketplace for AI agents.

@@ -62,6 +62,33 @@ async def rate_agent(agent_id: str, body: models.RatingRequest, current_user: st
     )
     return {"avg_rating": round(avg, 1), "rating_count": len(all_ratings)}
 
+@router.delete("/marketplace/{agent_id}")
+async def delete_marketplace_agent(agent_id: str, current_user: str = Depends(auth.get_current_user)):
+    agent = await db.marketplace_agents.find_one({"id": agent_id})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    if agent.get("creator_email") != current_user:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    await db.marketplace_agents.delete_one({"id": agent_id})
+    return {"status": "deleted"}
+
+
+@router.put("/marketplace/{agent_id}")
+async def update_marketplace_agent(agent_id: str, updates: dict, current_user: str = Depends(auth.get_current_user)):
+    agent = await db.marketplace_agents.find_one({"id": agent_id})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    if agent.get("creator_email") != current_user:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    allowed = {"name", "role", "skills", "use_cases", "price_credits"}
+    safe = {k: v for k, v in updates.items() if k in allowed}
+    if safe:
+        await db.marketplace_agents.update_one({"id": agent_id}, {"$set": safe})
+    updated = await db.marketplace_agents.find_one({"id": agent_id})
+    updated.pop("_id", None)
+    return updated
+
+
 @router.get("/marketplace/{agent_id}/ratings")
 async def get_ratings(agent_id: str, current_user: str = Depends(auth.get_current_user)):
     ratings = await db.ratings.find({"agent_id": agent_id}).to_list(100)

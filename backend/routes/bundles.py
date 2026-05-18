@@ -50,27 +50,32 @@ BUNDLES = [
 ]
 
 
+async def _resolve_bundle_agents(agent_ids, current_user):
+    agents = []
+    individual_total = 0
+    all_hired = True
+    for agent_id in agent_ids:
+        agent = await db.marketplace_agents.find_one({"id": agent_id})
+        if agent:
+            is_hired = bool(await db.user_agents.find_one({"id": agent_id, "user_email": current_user}))
+            if not is_hired:
+                all_hired = False
+            agents.append({
+                "id": agent["id"],
+                "name": agent["name"],
+                "role": agent["role"],
+                "price_credits": agent["price_credits"],
+                "is_hired": is_hired,
+            })
+            individual_total += agent["price_credits"]
+    return agents, individual_total, all_hired
+
+
 @router.get("/bundles")
 async def get_bundles(current_user: str = Depends(auth.get_current_user)):
     result = []
     for bundle in BUNDLES:
-        agents = []
-        individual_total = 0
-        all_hired = True
-        for agent_id in bundle["agent_ids"]:
-            agent = await db.marketplace_agents.find_one({"id": agent_id})
-            if agent:
-                is_hired = bool(await db.user_agents.find_one({"id": agent_id, "user_email": current_user}))
-                if not is_hired:
-                    all_hired = False
-                agents.append({
-                    "id": agent["id"],
-                    "name": agent["name"],
-                    "role": agent["role"],
-                    "price_credits": agent["price_credits"],
-                    "is_hired": is_hired,
-                })
-                individual_total += agent["price_credits"]
+        agents, individual_total, all_hired = await _resolve_bundle_agents(bundle["agent_ids"], current_user)
         bundle_price = round(individual_total * (1 - bundle["discount"]))
         result.append({
             "id": bundle["id"],
@@ -83,12 +88,41 @@ async def get_bundles(current_user: str = Depends(auth.get_current_user)):
             "bundle_price": bundle_price,
             "is_all_hired": all_hired,
         })
+    # Include user-created bundles
+    user_bundles = await db.user_bundles.find({}).to_list(100)
+    for ub in user_bundles:
+        agents, individual_total, all_hired = await _resolve_bundle_agents(ub["agent_ids"], current_user)
+        result.append({
+            "id": ub["id"],
+            "name": ub["name"],
+            "description": ub.get("description", ""),
+            "color": ub.get("color", "emerald"),
+            "discount_pct": ub.get("discount_pct", 10),
+            "agents": agents,
+            "individual_total": individual_total,
+            "bundle_price": ub.get("bundle_price", individual_total),
+            "is_all_hired": all_hired,
+            "is_user_bundle": True,
+            "creator_email": ub.get("creator_email"),
+        })
     return result
 
 
 @router.post("/bundles/hire/{bundle_id}")
 async def hire_bundle(bundle_id: str, current_user: str = Depends(auth.get_current_user)):
-    bundle_def = next((b for b in BUNDLES if b["id"] == bundle_id), None)
+    # Check user bundles first
+    if bundle_id.startswith("ub_"):
+        ub = await db.user_bundles.find_one({"id": bundle_id})
+        if not ub:
+            raise HTTPException(status_code=404, detail="Bundle not found")
+        bundle_def = {
+            "id": ub["id"],
+            "name": ub["name"],
+            "agent_ids": ub["agent_ids"],
+            "discount": ub.get("discount_pct", 10) / 100,
+        }
+    else:
+        bundle_def = next((b for b in BUNDLES if b["id"] == bundle_id), None)
     if not bundle_def:
         raise HTTPException(status_code=404, detail="Bundle not found")
 
