@@ -1,24 +1,65 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function TaskHistoryTab({
   taskHistory,
   historySearch,
   setHistorySearch,
   historyAgentFilter,
-  setHistoryAgentFilter
+  setHistoryAgentFilter,
+  token,
+  apiUrl,
 }) {
+  const [exporting, setExporting] = useState(false);
+
   const filtered = taskHistory.filter(t => {
     const matchSearch = !historySearch || t.task_description?.toLowerCase().includes(historySearch.toLowerCase());
     const matchAgent  = historyAgentFilter === 'all' || t.agent_id === historyAgentFilter;
     return matchSearch && matchAgent;
   });
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch(`${apiUrl}/audit-log/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bottega_audit_log_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    }
+    setExporting(false);
+  };
+
   return (
     <div>
-      <div className="mb-10">
-        <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1.5">Logs</p>
-        <h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Task History</h1>
-        <p className="text-slate-500 font-medium text-lg">Search and filter execution logs across your swarms.</p>
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1.5">Logs</p>
+          <h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Task History</h1>
+          <p className="text-slate-500 font-medium text-lg">Search and filter execution logs across your swarms.</p>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={exporting || taskHistory.length === 0}
+          className="shrink-0 flex items-center gap-2.5 bg-slate-900 text-white rounded-2xl px-6 py-3.5 font-bold hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95 transition-all disabled:opacity-40"
+        >
+          {exporting ? (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          )}
+          Export Audit Log
+          <span className="bg-white/15 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest">EU AI Act</span>
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
@@ -64,6 +105,7 @@ export default function TaskHistoryTab({
         <>
           <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest mb-3 ml-1">
             {filtered.length} log entr{filtered.length !== 1 ? 'ies' : 'y'}
+            {taskHistory.length !== filtered.length && ` · ${taskHistory.length} total`}
           </p>
           <div className="space-y-3">
             {filtered.map(task => (
@@ -74,6 +116,7 @@ export default function TaskHistoryTab({
                       <span className="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold px-2.5 py-0.5 rounded-md">{task.agent_name || task.agent_id}</span>
                       {task.delegated && <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">A2A Swarm</span>}
                       {task.pending_approval && <span className="bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">Pending Approval</span>}
+                      {task.approved && !task.pending_approval && <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">Approved</span>}
                     </div>
                     <p className="text-sm font-semibold text-slate-800 leading-relaxed">{task.task_description}</p>
                   </div>

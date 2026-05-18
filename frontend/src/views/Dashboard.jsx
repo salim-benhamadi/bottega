@@ -431,6 +431,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               setHistorySearch={setHistorySearch}
               historyAgentFilter={historyAgentFilter}
               setHistoryAgentFilter={setHistoryAgentFilter}
+              token={token}
+              apiUrl={apiUrl}
             />
           )}
 

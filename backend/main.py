@@ -4,7 +4,7 @@ from database import db
 from shared import SEED_AGENTS
 
 # Import routes
-from routes import auth, user, marketplace, team, tasks, dossier, performance, standup, notifications, creator, transcription, analytics
+from routes import auth, user, marketplace, team, tasks, dossier, performance, standup, notifications, creator, transcription, analytics, audit
 
 app = FastAPI(title="Bottega API")
 
@@ -29,6 +29,7 @@ app.include_router(notifications.router)
 app.include_router(creator.router)
 app.include_router(transcription.router)
 app.include_router(analytics.router)
+app.include_router(audit.router)
 
 @app.on_event("startup")
 async def startup_db_client():
