@@ -47,8 +47,9 @@ export default function Register({ setToken, apiUrl }) {
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem('token', data.access_token);
+        localStorage.removeItem('bottega_onboarding_done');
         setToken(data.access_token);
-        navigate('/dashboard');
+        navigate('/onboarding');
       } else {
         setError(data.detail);
       }

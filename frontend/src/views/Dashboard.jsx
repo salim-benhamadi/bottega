@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  BookIcon,
   TeamIcon,
   ClockIcon,
   MicIcon,
@@ -22,7 +21,6 @@ import Toast from '../components/Toast';
 import AIActModal from '../components/AIActModal';
 
 // Tabs
-import TutorialTab from './tabs/TutorialTab';
 import TeamTab from './tabs/TeamTab';
 import DailyBriefingTab from './tabs/DailyBriefingTab';
 import MeetingNotetakerTab from './tabs/MeetingNotetakerTab';
@@ -36,9 +34,7 @@ import SettingsTab from './tabs/SettingsTab';
 import PerformanceReviewTab from './tabs/PerformanceReviewTab';
 
 export default function Dashboard({ token, setToken, apiUrl }) {
-  const [activeTab, setActiveTab] = useState('tutorial');
-  const [tutorialStep, setTutorialStep] = useState(1);
-
+  const [activeTab, setActiveTab] = useState('team');
   // Data
   const [team, setTeam] = useState([]);
   const [marketplace, setMarketplace] = useState([]);
@@ -152,7 +148,6 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     if (activeTab === 'compliance' && !complianceReport) generateComplianceReport();
     if (activeTab === 'settings' && userInfo) setSettingsForm({ company_name: userInfo.company_name || '' });
     if (activeTab === 'settings') fetchWithAuth('/credits/history').then(data => { if (Array.isArray(data)) setCreditHistory(data); });
-    if (activeTab === 'tutorial') {} // no fetch needed
   }, [activeTab]);
 
   // Actions
@@ -416,10 +411,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
 
         {/* Nav */}
         <div className="flex-1 overflow-y-auto px-2 space-y-0.5 relative z-10">
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5">Start</p>
-          <NavButton active={activeTab==='tutorial'} onClick={()=>setActiveTab('tutorial')} icon={<BookIcon/>}>Tutorial</NavButton>
-
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5 pt-3">Workspace</p>
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5">Workspace</p>
           <NavButton active={activeTab==='team'||activeTab==='performance'} onClick={()=>setActiveTab('team')} icon={<TeamIcon/>}>Your Team</NavButton>
           <NavButton active={activeTab==='standup'} onClick={()=>setActiveTab('standup')} icon={<ClockIcon/>}>Daily Standup</NavButton>
           <NavButton active={activeTab==='meeting'} onClick={()=>setActiveTab('meeting')} icon={<MicIcon/>}>
@@ -459,10 +451,6 @@ export default function Dashboard({ token, setToken, apiUrl }) {
       {/* ── Main ── */}
       <main className="flex-1 overflow-y-auto bg-slate-50" onClick={() => showNotifications && setShowNotifications(false)}>
         <div className="max-w-6xl mx-auto px-10 py-12 animate-fade-in-up">
-          {activeTab === 'tutorial' && (
-            <TutorialTab tutorialStep={tutorialStep} setTutorialStep={setTutorialStep} setActiveTab={setActiveTab} />
-          )}
-
           {activeTab === 'team' && (
             <TeamTab
               team={team}
