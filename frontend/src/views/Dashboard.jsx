@@ -47,6 +47,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
   const [analytics, setAnalytics] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [bundles, setBundles] = useState([]);
+  const [orgStructure, setOrgStructure] = useState({});
   const [creatorStats, setCreatorStats] = useState(null);
 
   // History filters
@@ -104,9 +106,37 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     return () => clearInterval(interval);
   }, []);
 
+  const fetchBundles = async () => {
+    const data = await fetchWithAuth('/bundles');
+    if (Array.isArray(data)) setBundles(data);
+  };
+
+  const handleHireBundle = async (bundleId) => {
+    try {
+      const data = await fetchWithAuth(`/bundles/hire/${bundleId}`, { method: 'POST' });
+      fetchWithAuth('/team').then(setTeam);
+      fetchBundles();
+      showToast(data.agents_hired?.length > 0 ? `Hired: ${data.agents_hired.join(', ')}` : 'Team hired!');
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchOrgStructure = async () => {
+    const data = await fetchWithAuth('/team/structure');
+    if (data && typeof data === 'object') setOrgStructure(data);
+  };
+
+  const saveOrgStructure = async (structure) => {
+    setOrgStructure(structure);
+    await fetchWithAuth('/team/structure', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(structure),
+    });
+  };
+
   useEffect(() => {
-    if (activeTab === 'team') fetchWithAuth('/team').then(setTeam);
-    if (activeTab === 'marketplace') fetchWithAuth('/marketplace').then(setMarketplace);
+    if (activeTab === 'team') { fetchWithAuth('/team').then(setTeam); fetchOrgStructure(); }
+    if (activeTab === 'marketplace') { fetchWithAuth('/marketplace').then(setMarketplace); fetchBundles(); }
     if (activeTab === 'standup') { setStandup(null); fetchWithAuth('/standup').then(setStandup); }
     if (activeTab === 'history') fetchWithAuth('/tasks/history').then(data => { if (Array.isArray(data)) setTaskHistory(data); });
     if (activeTab === 'analytics') { setAnalytics(null); fetchWithAuth('/analytics').then(setAnalytics); }
@@ -392,6 +422,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               handleEndProbation={handleEndProbation}
               fetchPerformance={fetchPerformance}
               handleEscalationResolve={handleEscalationResolve}
+              orgStructure={orgStructure}
+              saveOrgStructure={saveOrgStructure}
             />
           )}
 
@@ -441,6 +473,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               handleRateAgent={handleRateAgent}
               setComplianceAgent={setComplianceAgent}
               handleHire={handleHire}
+              bundles={bundles}
+              handleHireBundle={handleHireBundle}
             />
           )}
 

@@ -2,6 +2,141 @@ import React, { useState } from 'react';
 import StarRating from '../../components/StarRating';
 import AgentAvatar from '../../components/AgentAvatar';
 
+const COLOR_MAP = {
+  green: {
+    accent: '#22c55e',
+    badge: 'bg-green-100 text-green-700 border border-green-200',
+    button: 'bg-green-500 hover:bg-green-400 text-white',
+    border: 'border-green-200',
+    strip: 'from-green-400 to-emerald-400',
+  },
+  indigo: {
+    accent: '#6366f1',
+    badge: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
+    button: 'bg-indigo-500 hover:bg-indigo-400 text-white',
+    border: 'border-indigo-200',
+    strip: 'from-indigo-400 to-purple-400',
+  },
+  purple: {
+    accent: '#a855f7',
+    badge: 'bg-purple-100 text-purple-700 border border-purple-200',
+    button: 'bg-purple-500 hover:bg-purple-400 text-white',
+    border: 'border-purple-200',
+    strip: 'from-purple-400 to-fuchsia-400',
+  },
+  teal: {
+    accent: '#14b8a6',
+    badge: 'bg-teal-100 text-teal-700 border border-teal-200',
+    button: 'bg-teal-500 hover:bg-teal-400 text-white',
+    border: 'border-teal-200',
+    strip: 'from-teal-400 to-cyan-400',
+  },
+  amber: {
+    accent: '#f59e0b',
+    badge: 'bg-amber-100 text-amber-700 border border-amber-200',
+    button: 'bg-amber-500 hover:bg-amber-400 text-white',
+    border: 'border-amber-200',
+    strip: 'from-amber-400 to-orange-400',
+  },
+};
+
+function BundleCard({ bundle, onHire }) {
+  const [confirming, setConfirming] = useState(false);
+  const colors = COLOR_MAP[bundle.color] || COLOR_MAP.green;
+  const savings = bundle.individual_total - bundle.bundle_price;
+
+  return (
+    <div
+      className={`bg-white rounded-2xl border shadow-sm flex flex-col relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 ${colors.border}`}
+      style={{ minWidth: 280, maxWidth: 320 }}
+    >
+      {/* Top accent gradient line */}
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colors.strip}`} />
+
+      {/* Discount badge */}
+      <div
+        className={`absolute top-3 right-3 text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-widest ${colors.badge}`}
+      >
+        {bundle.discount_pct}% OFF
+      </div>
+
+      <div className="p-5 pt-6 flex-1 flex flex-col">
+        <h3 className="text-base font-display font-bold text-slate-900 mb-1 pr-16">{bundle.name}</h3>
+        <p className="text-xs text-slate-500 font-medium mb-4 leading-relaxed">{bundle.description}</p>
+
+        {/* Agent avatar strip */}
+        <div className="flex items-center mb-3" style={{ gap: 0 }}>
+          {bundle.agents.map((agent, i) => (
+            <div
+              key={agent.id}
+              className="rounded-xl overflow-hidden border-2 border-white"
+              style={{ marginLeft: i === 0 ? 0 : -8, zIndex: i }}
+            >
+              <AgentAvatar name={agent.name} role={agent.role} size={32} />
+            </div>
+          ))}
+        </div>
+
+        {/* Agent name chips */}
+        <div className="flex flex-wrap gap-1 mb-4">
+          {bundle.agents.map(agent => (
+            <span
+              key={agent.id}
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${agent.is_hired ? 'bg-slate-100 text-slate-400 line-through' : 'bg-slate-100 text-slate-600'}`}
+            >
+              {agent.name}
+            </span>
+          ))}
+        </div>
+
+        {/* Pricing */}
+        <div className="flex items-baseline gap-2 mb-4">
+          <span className="text-slate-400 text-sm line-through font-medium">{bundle.individual_total} cr</span>
+          <span className="text-2xl font-display font-extrabold text-slate-900">{bundle.bundle_price} cr</span>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${colors.badge}`}>
+            Save {savings} cr
+          </span>
+        </div>
+
+        {/* CTA */}
+        {bundle.is_all_hired ? (
+          <button
+            disabled
+            className="w-full bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl py-2.5 text-sm font-bold cursor-default flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+            All Hired
+          </button>
+        ) : confirming ? (
+          <div className="flex items-center gap-1.5 animate-fade-in-up">
+            <span className="text-xs font-bold text-slate-600">{bundle.bundle_price} cr</span>
+            <button
+              onClick={() => { onHire(bundle.id); setConfirming(false); }}
+              className="flex-1 bg-emerald-500 text-white rounded-xl px-3 py-2 text-xs font-bold hover:bg-emerald-400 active:scale-95 transition-all"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => setConfirming(false)}
+              className="text-xs text-slate-400 hover:text-slate-600 font-bold px-2 py-2 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirming(true)}
+            className={`w-full rounded-2xl py-2.5 text-sm font-bold active:scale-95 transition-all flex items-center justify-center gap-2 ${colors.button}`}
+          >
+            Hire Team — {bundle.bundle_price} cr
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function MarketplaceTab({
   marketplace,
   marketplaceSearch,
@@ -16,7 +151,9 @@ export default function MarketplaceTab({
   loadRatings,
   handleRateAgent,
   setComplianceAgent,
-  handleHire
+  handleHire,
+  bundles = [],
+  handleHireBundle,
 }) {
   const [confirmingHire, setConfirmingHire] = useState(null);
 
@@ -62,6 +199,22 @@ export default function MarketplaceTab({
         </div>
       </div>
 
+      {/* ── Team Bundles ── */}
+      {bundles.length > 0 && (
+        <div className="mb-10">
+          <div className="mb-4">
+            <h2 className="text-xl font-display font-bold text-slate-900 mb-0.5">Team Bundles</h2>
+            <p className="text-sm text-slate-500 font-medium">Hire a complete team at a discounted rate</p>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
+            {bundles.map(bundle => (
+              <BundleCard key={bundle.id} bundle={bundle} onHire={handleHireBundle} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Individual Agents ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {filteredMarketplace.length === 0 && (
           <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">

@@ -70,3 +70,19 @@ async def end_probation(agent_id: str, current_user: str = Depends(auth.get_curr
     await _create_notification(current_user, "probation_ended",
         f"{agent.get('name', 'Agent')} probation ended — they now operate with full autonomy.")
     return {"status": "success"}
+
+
+@router.get("/team/structure")
+async def get_structure(current_user: str = Depends(auth.get_current_user)):
+    doc = await db.team_structure.find_one({"user_email": current_user})
+    return doc.get("structure", {}) if doc else {}
+
+
+@router.put("/team/structure")
+async def save_structure(payload: dict, current_user: str = Depends(auth.get_current_user)):
+    await db.team_structure.update_one(
+        {"user_email": current_user},
+        {"$set": {"user_email": current_user, "structure": payload}},
+        upsert=True,
+    )
+    return {"status": "saved"}
