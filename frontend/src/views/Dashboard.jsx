@@ -61,17 +61,10 @@ export default function Dashboard({ token, setToken, apiUrl }) {
   const [reviewInputs, setReviewInputs] = useState({});      // { agentId: text }
   const [agentRatings, setAgentRatings] = useState({});      // { agentId: { user_stars, ratings } }
   const [editingDossier, setEditingDossier] = useState(null); // { agentId, idx, text }
-  const [audioFile, setAudioFile] = useState(null);
-  const [audioResult, setAudioResult] = useState(null);
-  const [audioLoading, setAudioLoading] = useState(false);
-
   // Task state
   const [taskInputs, setTaskInputs] = useState({});
   const [taskResults, setTaskResults] = useState({});
   const [loadingTasks, setLoadingTasks] = useState({});
-  const [meetingInput, setMeetingInput] = useState('');
-  const [meetingResult, setMeetingResult] = useState(null);
-  const [meetingLoading, setMeetingLoading] = useState(false);
 
   // Creator
   const [creatorForm, setCreatorForm] = useState({ name: '', role: '', skills: '', use_cases: '', price_credits: '' });
@@ -222,31 +215,6 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     }));
     setEditingDossier(null);
     showToast('Entry updated.');
-  };
-
-  const handleTranscribe = async () => {
-    if (!meetingInput) return;
-    setMeetingLoading(true);
-    try {
-      const res = await fetch(`${apiUrl}/transcribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ task_description: meetingInput }),
-      });
-      setMeetingResult(await res.json());
-    } catch (e) { console.error(e); }
-    setMeetingLoading(false);
-  };
-
-  const handleAudioUpload = async () => {
-    if (!audioFile) return;
-    setAudioLoading(true);
-    const fd = new FormData(); fd.append('file', audioFile);
-    try {
-      const res = await fetch(`${apiUrl}/transcribe/audio`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd });
-      setAudioResult(await res.json());
-    } catch (e) { console.error(e); }
-    setAudioLoading(false);
   };
 
   const handleCreateAgent = async (e) => {
@@ -407,18 +375,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
           )}
 
           {activeTab === 'meeting' && (
-            <MeetingNotetakerTab
-              meetingInput={meetingInput}
-              setMeetingInput={setMeetingInput}
-              meetingResult={meetingResult}
-              meetingLoading={meetingLoading}
-              audioFile={audioFile}
-              setAudioFile={setAudioFile}
-              audioResult={audioResult}
-              audioLoading={audioLoading}
-              handleAudioUpload={handleAudioUpload}
-              handleTranscribe={handleTranscribe}
-            />
+            <MeetingNotetakerTab token={token} apiUrl={apiUrl} />
           )}
 
           {activeTab === 'history' && (
