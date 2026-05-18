@@ -14,6 +14,7 @@ import {
   GearIcon,
   ChartIcon,
   LinkIcon,
+  ShieldIcon,
 } from '../components/Icons';
 import NavButton from '../components/NavButton';
 import Logo from '../components/Logo';
@@ -30,6 +31,7 @@ import AnalyticsTab from './tabs/AnalyticsTab';
 import MarketplaceTab from './tabs/MarketplaceTab';
 import CreatorStudioTab from './tabs/CreatorStudioTab';
 import ConnectorsTab from './tabs/ConnectorsTab';
+import ComplianceTab from './tabs/ComplianceTab';
 import SettingsTab from './tabs/SettingsTab';
 import PerformanceReviewTab from './tabs/PerformanceReviewTab';
 
@@ -53,6 +55,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
   const [orgStructure, setOrgStructure] = useState({});
   const [creatorStats, setCreatorStats] = useState(null);
   const [userConnectors, setUserConnectors] = useState([]);
+  const [complianceReport, setComplianceReport] = useState(null);
+  const [complianceLoading, setComplianceLoading] = useState(false);
 
   // History filters
   const [historySearch, setHistorySearch] = useState('');
@@ -145,6 +149,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     if (activeTab === 'analytics') { setAnalytics(null); fetchWithAuth('/analytics').then(setAnalytics); }
     if (activeTab === 'creator') fetchWithAuth('/creator/stats').then(setCreatorStats);
     if (activeTab === 'connectors') fetchWithAuth('/connectors').then(data => { if (Array.isArray(data)) setUserConnectors(data); });
+    if (activeTab === 'compliance' && !complianceReport) generateComplianceReport();
     if (activeTab === 'settings' && userInfo) setSettingsForm({ company_name: userInfo.company_name || '' });
     if (activeTab === 'settings') fetchWithAuth('/credits/history').then(data => { if (Array.isArray(data)) setCreditHistory(data); });
     if (activeTab === 'tutorial') {} // no fetch needed
@@ -300,6 +305,15 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     setTeam(prev => prev.map(a => a.id === agentId ? { ...a, allowed_tools: allowedTools } : a));
   };
 
+  const generateComplianceReport = async () => {
+    setComplianceLoading(true);
+    try {
+      const data = await fetchWithAuth('/compliance/report');
+      setComplianceReport(data);
+    } catch (e) { console.error(e); }
+    setComplianceLoading(false);
+  };
+
   const handleCreateAgent = async (e) => {
     e.preventDefault();
     const payload = { name: creatorForm.name, role: creatorForm.role, skills: creatorForm.skills.split(',').map(s => s.trim()), use_cases: creatorForm.use_cases.split(',').map(s => s.trim()), price_credits: parseInt(creatorForm.price_credits) || 10 };
@@ -423,6 +437,12 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               {userConnectors.length > 0 && <span className="text-[8px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded font-bold">{userConnectors.length}</span>}
             </span>
           </NavButton>
+          <NavButton active={activeTab==='compliance'} onClick={()=>setActiveTab('compliance')} icon={<ShieldIcon/>}>
+            <span className="flex items-center gap-2">
+              EU AI Act
+              <span className="text-[8px] bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-bold">2024</span>
+            </span>
+          </NavButton>
 
           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5 pt-3">Account</p>
           <NavButton active={activeTab==='settings'} onClick={()=>setActiveTab('settings')} icon={<GearIcon/>}>Settings</NavButton>
@@ -520,6 +540,16 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               connectors={userConnectors}
               onConnect={handleConnectConnector}
               onDisconnect={handleDisconnectConnector}
+            />
+          )}
+
+          {activeTab === 'compliance' && (
+            <ComplianceTab
+              report={complianceReport}
+              loading={complianceLoading}
+              onGenerate={generateComplianceReport}
+              token={token}
+              apiUrl={apiUrl}
             />
           )}
 
