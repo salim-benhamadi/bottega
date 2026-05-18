@@ -296,10 +296,16 @@ function Dashboard({ token, setToken }) {
   const [marketplace, setMarketplace] = useState([]);
   const [standup, setStandup] = useState(null);
   const [performance, setPerformance] = useState(null);
+  const [agentTasks, setAgentTasks] = useState([]);       // tasks for the current performance agent
   const [taskHistory, setTaskHistory] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [creatorStats, setCreatorStats] = useState(null);
+
+  // History filters
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyAgentFilter, setHistoryAgentFilter] = useState('all');
 
   // UI State
   const [complianceAgent, setComplianceAgent] = useState(null);
@@ -364,6 +370,7 @@ function Dashboard({ token, setToken }) {
     if (activeTab === 'marketplace') fetchWithAuth('/marketplace').then(setMarketplace);
     if (activeTab === 'standup') { setStandup(null); fetchWithAuth('/standup').then(setStandup); }
     if (activeTab === 'history') fetchWithAuth('/tasks/history').then(data => { if (Array.isArray(data)) setTaskHistory(data); });
+    if (activeTab === 'analytics') { setAnalytics(null); fetchWithAuth('/analytics').then(setAnalytics); }
     if (activeTab === 'creator') fetchWithAuth('/creator/stats').then(setCreatorStats);
     if (activeTab === 'settings' && userInfo) setSettingsForm({ company_name: userInfo.company_name || '' });
   }, [activeTab]);
@@ -421,8 +428,12 @@ function Dashboard({ token, setToken }) {
   };
 
   const fetchPerformance = async (agentId) => {
-    const data = await fetchWithAuth(`/performance/${agentId}`);
-    setPerformance(data);
+    const [perf, tasks] = await Promise.all([
+      fetchWithAuth(`/performance/${agentId}`),
+      fetchWithAuth(`/tasks/history?agent_id=${agentId}&limit=20`),
+    ]);
+    setPerformance(perf);
+    setAgentTasks(Array.isArray(tasks) ? tasks : []);
     setActiveTab('performance');
   };
 
@@ -606,6 +617,7 @@ function Dashboard({ token, setToken }) {
             <span className="flex items-center gap-2">Meeting Notetaker <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold">STT</span></span>
           </NavButton>
           <NavButton active={activeTab==='history'} onClick={()=>setActiveTab('history')} icon={<HistoryIcon/>}>Task History</NavButton>
+          <NavButton active={activeTab==='analytics'} onClick={()=>setActiveTab('analytics')} icon={<ChartIcon/>}>Analytics</NavButton>
 
           <p className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest px-3 mb-3 mt-6">Ecosystem</p>
           <NavButton active={activeTab==='marketplace'} onClick={()=>setActiveTab('marketplace')} icon={<ShopIcon/>}>Marketplace</NavButton>
@@ -871,27 +883,161 @@ function Dashboard({ token, setToken }) {
           {/* ── TASK HISTORY ── */}
           {activeTab==='history'&&(
             <div>
-              <div className="mb-10"><h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Task History</h1><p className="text-slate-500 font-medium text-lg">Last 50 tasks across all your agents.</p></div>
-              {taskHistory.length===0?(
-                <div className="py-20 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem] bg-white"><p className="text-slate-400 text-lg font-medium">No tasks yet. Assign tasks to your team to see history here.</p></div>
-              ):(
-                <div className="space-y-4">
-                  {taskHistory.map(task=>(
-                    <div key={task.task_id} className="bg-white rounded-[1.5rem] p-6 border border-slate-100 hover:border-emerald-200 transition-all">
-                      <div className="flex items-start justify-between gap-4 mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">{task.agent_name||task.agent_id}</span>
-                            {task.delegated&&<span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">🔄 A2A</span>}
-                            {task.pending_approval&&<span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg">Pending approval</span>}
+              <div className="mb-8"><h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Task History</h1><p className="text-slate-500 font-medium text-lg">Search and filter all tasks across your team.</p></div>
+
+              {/* Search + filter bar */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                <input
+                  className="flex-1 min-w-48 bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                  placeholder="Search task descriptions…"
+                  value={historySearch}
+                  onChange={e => setHistorySearch(e.target.value)}
+                />
+                <select
+                  className="bg-white border border-slate-200 px-4 py-3 rounded-2xl text-sm font-medium text-slate-700 outline-none focus:border-emerald-500 transition-all"
+                  value={historyAgentFilter}
+                  onChange={e => setHistoryAgentFilter(e.target.value)}
+                >
+                  <option value="all">All agents</option>
+                  {[...new Set(taskHistory.map(t => t.agent_id))].map(id => {
+                    const name = taskHistory.find(t => t.agent_id === id)?.agent_name || id;
+                    return <option key={id} value={id}>{name}</option>;
+                  })}
+                </select>
+                {(historySearch || historyAgentFilter !== 'all') && (
+                  <button onClick={() => { setHistorySearch(''); setHistoryAgentFilter('all'); }} className="px-4 py-3 rounded-2xl text-sm font-bold text-slate-500 border border-slate-200 bg-white hover:border-slate-300 transition-all">Clear</button>
+                )}
+              </div>
+
+              {(() => {
+                const filtered = taskHistory.filter(t => {
+                  const matchSearch = !historySearch || t.task_description?.toLowerCase().includes(historySearch.toLowerCase());
+                  const matchAgent  = historyAgentFilter === 'all' || t.agent_id === historyAgentFilter;
+                  return matchSearch && matchAgent;
+                });
+                return filtered.length === 0 ? (
+                  <div className="py-20 text-center border-2 border-dashed border-slate-200 rounded-[2.5rem] bg-white">
+                    <p className="text-slate-400 text-lg font-medium">{taskHistory.length === 0 ? 'No tasks yet — assign tasks to your team first.' : 'No tasks match your filters.'}</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-4">{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
+                    <div className="space-y-4">
+                      {filtered.map(task => (
+                        <div key={task.task_id} className="bg-white rounded-[1.5rem] p-6 border border-slate-100 hover:border-emerald-200 transition-all">
+                          <div className="flex items-start justify-between gap-4 mb-3">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">{task.agent_name || task.agent_id}</span>
+                                {task.delegated && <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg">🔄 A2A</span>}
+                                {task.pending_approval && <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-lg">Pending approval</span>}
+                              </div>
+                              <p className="text-slate-800 font-semibold">{task.task_description}</p>
+                            </div>
+                            <span className="text-xs text-slate-400 font-medium shrink-0">{new Date(task.timestamp).toLocaleString()}</span>
                           </div>
-                          <p className="text-slate-800 font-semibold">{task.task_description}</p>
+                          <p className="text-sm text-slate-600 font-medium line-clamp-2 bg-slate-50 rounded-xl p-3">{task.result?.slice(0, 200)}{task.result?.length > 200 ? '…' : ''}</p>
                         </div>
-                        <span className="text-xs text-slate-400 font-medium shrink-0">{new Date(task.timestamp).toLocaleString()}</span>
-                      </div>
-                      <p className="text-sm text-slate-600 font-medium line-clamp-2 bg-slate-50 rounded-xl p-3">{task.result?.slice(0,200)}{task.result?.length>200?'…':''}</p>
+                      ))}
                     </div>
-                  ))}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* ── ANALYTICS ── */}
+          {activeTab==='analytics'&&(
+            <div>
+              <div className="mb-10"><h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Analytics</h1><p className="text-slate-500 font-medium text-lg">Usage, productivity, and team performance.</p></div>
+
+              {!analytics ? (
+                <div className="text-center text-slate-400 flex flex-col items-center py-32">
+                  <div className="w-12 h-12 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mb-6"/>
+                  <p className="font-bold tracking-wide text-lg">Loading analytics…</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+
+                  {/* Stat cards */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[
+                      { label: 'Total Tasks', value: analytics.total_tasks, sub: 'all time', color: 'text-emerald-600' },
+                      { label: 'Active Agents', value: analytics.active_agents, sub: 'on your team', color: 'text-teal-600' },
+                      { label: 'A2A Delegations', value: analytics.delegation_count, sub: 'auto-pipelines', color: 'text-indigo-600' },
+                      { label: 'Credits Balance', value: analytics.credit_balance, sub: `${analytics.credits_spent_on_hires} cr in hires`, color: 'text-amber-600' },
+                    ].map(({ label, value, sub, color }) => (
+                      <div key={label} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
+                        <div className={`text-3xl font-display font-extrabold mb-1 ${color}`}>{value}</div>
+                        <div className="text-sm font-bold text-slate-700 mb-0.5">{label}</div>
+                        <div className="text-xs text-slate-400 font-medium">{sub}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Weekly activity bar chart */}
+                  <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-display font-bold text-slate-900 mb-1">Weekly Activity</h3>
+                    <p className="text-sm text-slate-400 font-medium mb-8">Tasks completed per week over the last 8 weeks.</p>
+                    {(() => {
+                      const max = Math.max(...analytics.tasks_per_week.map(w => w.count), 1);
+                      return (
+                        <div className="flex items-end gap-2" style={{ height: '140px' }}>
+                          {analytics.tasks_per_week.map((week, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center justify-end gap-2 h-full">
+                              <span className="text-xs font-bold text-slate-700">{week.count > 0 ? week.count : ''}</span>
+                              <div
+                                className={`w-full rounded-t-xl transition-all ${i === analytics.tasks_per_week.length - 1 ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                                style={{ height: `${Math.max((week.count / max) * 100, week.count > 0 ? 4 : 1)}%` }}
+                              />
+                              <span className="text-[10px] text-slate-400 font-medium">{week.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Tasks per agent horizontal bars */}
+                  <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-display font-bold text-slate-900 mb-1">Tasks per Agent</h3>
+                    <p className="text-sm text-slate-400 font-medium mb-6">Productivity breakdown across your team.</p>
+                    {analytics.tasks_per_agent.length === 0 ? (
+                      <p className="text-slate-400 text-sm">No tasks completed yet.</p>
+                    ) : (() => {
+                      const max = Math.max(...analytics.tasks_per_agent.map(a => a.count), 1);
+                      return (
+                        <div className="space-y-4">
+                          {analytics.tasks_per_agent.map(agent => (
+                            <div key={agent.agent_id} className="flex items-center gap-4">
+                              <div className="w-36 shrink-0">
+                                <p className="text-sm font-bold text-slate-700 truncate">{agent.agent_name}</p>
+                              </div>
+                              <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+                                  style={{ width: `${(agent.count / max) * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-extrabold text-slate-900 w-8 text-right shrink-0">{agent.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Agent activity log — click an agent to see their last tasks */}
+                  <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-display font-bold text-slate-900 mb-1">Per-Agent Activity Log</h3>
+                    <p className="text-sm text-slate-400 font-medium mb-6">Expand any agent to see their recent task history.</p>
+                    {analytics.tasks_per_agent.length === 0 ? (
+                      <p className="text-slate-400 text-sm">No agent activity yet.</p>
+                    ) : (
+                      <AgentActivityAccordion agents={analytics.tasks_per_agent} token={token} logout={logout} apiUrl={API_URL} />
+                    )}
+                  </div>
+
                 </div>
               )}
             </div>
@@ -917,6 +1063,28 @@ function Dashboard({ token, setToken }) {
                   <div className="text-right text-xs text-slate-400 mt-1">{Math.min(100,Math.round((performance.days_active/30)*100))}% to full autonomy</div>
                 </div>
               </div>
+
+              {/* Agent activity log */}
+              {agentTasks.length > 0 && (
+                <div className="bg-white rounded-[3rem] p-10 border border-slate-100 mb-8">
+                  <h3 className="text-xl font-display font-bold text-slate-900 mb-1">Recent Activity</h3>
+                  <p className="text-slate-500 text-sm font-medium mb-6">Last {agentTasks.length} tasks completed by this agent.</p>
+                  <div className="space-y-3">
+                    {agentTasks.map(task => (
+                      <div key={task.task_id} className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            {task.delegated && <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">🔄 A2A</span>}
+                            {task.pending_approval && <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">Pending</span>}
+                          </div>
+                          <p className="text-sm font-semibold text-slate-800 truncate">{task.task_description}</p>
+                          <p className="text-xs text-slate-400 font-medium mt-0.5">{new Date(task.timestamp).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="bg-white rounded-[3rem] p-10 border border-slate-100">
                 <h3 className="text-xl font-display font-bold text-slate-900 mb-1">Specialization Timeline</h3>
@@ -1077,6 +1245,68 @@ function Dashboard({ token, setToken }) {
   );
 }
 
+/* ── AgentActivityAccordion ── */
+function AgentActivityAccordion({ agents, token, logout, apiUrl }) {
+  const [open, setOpen] = useState(null);
+  const [tasks, setTasks] = useState({});
+  const [loading, setLoading] = useState({});
+
+  const toggle = async (agentId) => {
+    if (open === agentId) { setOpen(null); return; }
+    setOpen(agentId);
+    if (tasks[agentId]) return;
+    setLoading(p => ({ ...p, [agentId]: true }));
+    try {
+      const res = await fetch(`${apiUrl}/tasks/history?agent_id=${agentId}&limit=10`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      setTasks(p => ({ ...p, [agentId]: Array.isArray(data) ? data : [] }));
+    } catch { setTasks(p => ({ ...p, [agentId]: [] })); }
+    setLoading(p => ({ ...p, [agentId]: false }));
+  };
+
+  return (
+    <div className="space-y-2">
+      {agents.map(agent => (
+        <div key={agent.agent_id} className="border border-slate-100 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => toggle(agent.agent_id)}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm">{agent.agent_name.charAt(0)}</div>
+              <span className="font-bold text-slate-800 text-sm">{agent.agent_name}</span>
+              <span className="text-xs text-slate-400 font-medium">{agent.count} task{agent.count !== 1 ? 's' : ''}</span>
+            </div>
+            <span className={`text-slate-400 text-sm transition-transform ${open === agent.agent_id ? 'rotate-180' : ''}`}>▾</span>
+          </button>
+          {open === agent.agent_id && (
+            <div className="px-5 pb-4 border-t border-slate-100">
+              {loading[agent.agent_id] ? (
+                <p className="text-sm text-slate-400 py-4 text-center">Loading…</p>
+              ) : tasks[agent.agent_id]?.length === 0 ? (
+                <p className="text-sm text-slate-400 py-4 text-center">No tasks found.</p>
+              ) : (
+                <div className="space-y-2 mt-3">
+                  {tasks[agent.agent_id]?.map(t => (
+                    <div key={t.task_id} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-700 truncate">{t.task_description}</p>
+                        <p className="text-xs text-slate-400 font-medium">{new Date(t.timestamp).toLocaleString()}</p>
+                      </div>
+                      {t.delegated && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold shrink-0">A2A</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ── NavButton ── */
 function NavButton({ active, onClick, icon, children }) {
   return (
@@ -1100,5 +1330,6 @@ function AlertIcon()   { return <svg className="w-4 h-4" fill="none" stroke="cur
 function BellIcon()    { return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>; }
 function HistoryIcon() { return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>; }
 function GearIcon()    { return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>; }
+function ChartIcon()   { return <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>; }
 
 export default App;

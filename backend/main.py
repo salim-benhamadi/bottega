@@ -419,12 +419,68 @@ async def approve_task(task_id: str, current_user: str = Depends(auth.get_curren
     return {"status": "approved"}
 
 @app.get("/api/tasks/history")
-async def get_task_history(current_user: str = Depends(auth.get_current_user)):
-    tasks = await db.tasks.find({"user_email": current_user}).sort("timestamp", -1).limit(50).to_list(50)
-    return [
-        {k: v for k, v in t.items() if k != "_id"}
-        for t in tasks
-    ]
+async def get_task_history(
+    current_user: str = Depends(auth.get_current_user),
+    agent_id: str = None,
+    search: str = None,
+    limit: int = 50,
+):
+    query: dict = {"user_email": current_user}
+    if agent_id:
+        query["agent_id"] = agent_id
+    if search:
+        query["task_description"] = {"$regex": search, "$options": "i"}
+    tasks = await db.tasks.find(query).sort("timestamp", -1).limit(min(limit, 200)).to_list(min(limit, 200))
+    return [{k: v for k, v in t.items() if k != "_id"} for t in tasks]
+
+
+@app.get("/api/analytics")
+async def get_analytics(current_user: str = Depends(auth.get_current_user)):
+    tasks = await db.tasks.find({"user_email": current_user}).to_list(2000)
+    agents = await db.user_agents.find({"user_email": current_user}).to_list(100)
+    user = await db.users.find_one({"email": current_user})
+
+    agent_map = {a["id"]: a.get("name", a["id"]) for a in agents}
+
+    # Tasks per agent
+    tasks_per_agent: dict = {}
+    for t in tasks:
+        aid = t["agent_id"]
+        if aid not in tasks_per_agent:
+            tasks_per_agent[aid] = {"agent_id": aid, "agent_name": agent_map.get(aid, aid), "count": 0}
+        tasks_per_agent[aid]["count"] += 1
+
+    # Tasks per week — last 8 weeks
+    from datetime import timedelta
+    now = datetime.utcnow()
+    weekly = []
+    for i in range(7, -1, -1):
+        start = now - timedelta(weeks=i + 1)
+        end   = now - timedelta(weeks=i)
+        count = 0
+        for t in tasks:
+            try:
+                ts = datetime.fromisoformat(t.get("timestamp", ""))
+                if start <= ts < end:
+                    count += 1
+            except Exception:
+                pass
+        weekly.append({"label": start.strftime("%d %b"), "count": count})
+    weekly[-1]["label"] = "This wk"
+
+    # Credits spent estimate: 100 starting + top-ups – current balance
+    # We track balance directly so we compute spend from hires
+    hired_costs = sum(a.get("price_credits", 0) for a in agents)
+
+    return {
+        "total_tasks": len(tasks),
+        "active_agents": len(agents),
+        "delegation_count": sum(1 for t in tasks if t.get("delegated")),
+        "credit_balance": user.get("credit_balance", 100) if user else 100,
+        "credits_spent_on_hires": hired_costs,
+        "tasks_per_agent": sorted(tasks_per_agent.values(), key=lambda x: -x["count"]),
+        "tasks_per_week": weekly,
+    }
 
 @app.post("/api/probation/end/{agent_id}")
 async def end_probation(agent_id: str, current_user: str = Depends(auth.get_current_user)):
