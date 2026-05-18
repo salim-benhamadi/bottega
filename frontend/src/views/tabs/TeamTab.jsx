@@ -1,4 +1,150 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+// Parse the structured A2A result text produced by tasks.py
+function parseA2AResult(text) {
+  const pipelineMatch = text.match(/A2A Pipeline:\s*([^*\n→]+?)\s*→\s*([^*\n]+?)\*\*/);
+  const delegatedMatch = text.match(/\*\*Delegated Work:\*\*\n([\s\S]+?)(?:\n\n\*\*Result from|$)/);
+  const resultMatch = text.match(/\*\*Result from ([^:]+):\*\*\n([\s\S]+)$/);
+
+  if (pipelineMatch) {
+    return {
+      isA2A: true,
+      fromAgent: pipelineMatch[1].trim(),
+      toAgent: pipelineMatch[2].trim(),
+      delegatedWork: delegatedMatch?.[1]?.trim() || '',
+      specialistResult: resultMatch?.[2]?.trim() || text,
+      specialistName: resultMatch?.[1]?.trim() || pipelineMatch[2].trim(),
+    };
+  }
+  return { isA2A: false, plain: text };
+}
+
+// Animated in-flight pipeline shown while delegation is running
+function DelegationInFlight({ agentName }) {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setStep(1), 600);
+    const t2 = setTimeout(() => setStep(2), 1400);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  const steps = [
+    { label: 'Analyzing task scope', icon: '⚙' },
+    { label: 'Routing to specialist', icon: '⚡' },
+    { label: 'Awaiting result', icon: '↩' },
+  ];
+
+  return (
+    <div className="mb-4 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50 overflow-hidden animate-fade-in-up">
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 border-b border-indigo-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 pulse-dot" />
+          <span className="text-indigo-700 text-xs font-bold uppercase tracking-widest">A2A Swarm Pipeline</span>
+        </div>
+        <div className="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+
+      {/* Flow visualization */}
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-3 mb-4">
+          {/* Source node */}
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 border-2 border-indigo-200 flex items-center justify-center font-bold text-sm text-indigo-700 a2a-pulse">
+              {agentName?.charAt(0) || '?'}
+            </div>
+            <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest max-w-[52px] text-center truncate">{agentName}</span>
+          </div>
+
+          {/* Animated flow track */}
+          <div className="flex-1 relative h-6 flex items-center">
+            <div className="absolute inset-x-0 h-px bg-indigo-200" />
+            <div className="absolute inset-0 overflow-hidden flex items-center">
+              {[0, 1, 2].map(i => (
+                <div key={i} className="absolute w-2 h-2 rounded-full bg-indigo-400 a2a-flow-particle" style={{ left: '50%' }} />
+              ))}
+            </div>
+            <div className="absolute right-0 text-indigo-400">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5-5 5M6 7l5 5-5 5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+          </div>
+
+          {/* Target node */}
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-purple-100 border-2 border-purple-200 flex items-center justify-center">
+              <div className="w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+            </div>
+            <span className="text-[9px] font-bold text-purple-500 uppercase tracking-widest">Specialist</span>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-1.5">
+          {steps.map((s, i) => (
+            <div key={i} className={`flex items-center gap-2 transition-all duration-300 ${i <= step ? 'opacity-100' : 'opacity-30'} ${i === step ? 'step-in' : ''}`}>
+              <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] shrink-0 ${
+                i < step ? 'bg-indigo-500 text-white' : i === step ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'
+              }`}>
+                {i < step ? '✓' : s.icon}
+              </div>
+              <span className={`text-xs font-medium ${i === step ? 'text-indigo-700 font-bold' : i < step ? 'text-slate-400 line-through' : 'text-slate-400'}`}>{s.label}</span>
+              {i === step && <div className="flex gap-0.5 ml-auto">
+                {[0,1,2].map(d => <span key={d} className="w-1 h-1 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: `${d * 0.15}s` }} />)}
+              </div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Rich A2A result card rendered after delegation completes
+function A2APipelineResult({ parsed }) {
+  const [showWork, setShowWork] = useState(false);
+
+  return (
+    <div className="mb-4 rounded-2xl border border-indigo-200 overflow-hidden animate-fade-in-up">
+      {/* Pipeline header banner */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-xs">{parsed.fromAgent?.charAt(0)}</div>
+          <span className="text-white text-xs font-bold">{parsed.fromAgent}</span>
+          <svg className="w-3.5 h-3.5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-xs">{parsed.toAgent?.charAt(0)}</div>
+          <span className="text-white text-xs font-bold">{parsed.toAgent}</span>
+        </div>
+        <span className="bg-white/20 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest">A2A Pipeline</span>
+      </div>
+
+      {/* Specialist result */}
+      <div className="bg-indigo-50 px-4 py-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <div className="w-4 h-4 rounded bg-indigo-500 flex items-center justify-center text-white" style={{ fontSize: 9 }}>✓</div>
+          <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest">Result from {parsed.specialistName}</span>
+        </div>
+        <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">{parsed.specialistResult}</p>
+      </div>
+
+      {/* Collapsible delegated work section */}
+      {parsed.delegatedWork && (
+        <div className="border-t border-indigo-100">
+          <button onClick={() => setShowWork(v => !v)}
+            className="w-full px-4 py-2 flex items-center justify-between text-[10px] font-bold text-indigo-500 hover:bg-indigo-50 transition-colors uppercase tracking-widest">
+            <span>Delegated Prompt</span>
+            <svg className={`w-3 h-3 transition-transform ${showWork ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          {showWork && (
+            <div className="px-4 pb-3 bg-white">
+              <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">{parsed.delegatedWork}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TeamTab({
   team,
@@ -47,36 +193,44 @@ export default function TeamTab({
           const isMeeting = agent.role === 'Meeting Analyst';
           const isDelegating = loadingTasks[agent.id];
           const justDelegated = result?.delegated && !isDelegating;
+          const parsed = result?.result ? parseA2AResult(result.result) : null;
+
           return (
             <div key={agent.id} className={`bg-white rounded-2xl border shadow-sm flex flex-col relative overflow-hidden transition-all duration-300 ${
               justDelegated
-                ? 'border-indigo-200 shadow-indigo-100 shadow-md'
+                ? 'border-indigo-200 shadow-indigo-100/60 shadow-lg'
                 : 'border-slate-100 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200/50'
             }`}>
-              {/* Top accent line — indigo when A2A just fired */}
-              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${justDelegated ? 'from-indigo-500 via-purple-400 to-transparent' : 'from-emerald-500 via-teal-400 to-transparent'}`} />
-              {isDelegating && (
-                <div className="absolute top-0.5 left-0 right-0 h-0.5 bar-shimmer" />
-              )}
+              {/* Top accent line */}
+              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r transition-all duration-500 ${
+                justDelegated ? 'from-indigo-500 via-purple-400 to-transparent' : 'from-emerald-500 via-teal-400 to-transparent'
+              }`} />
+              {isDelegating && <div className="absolute top-0.5 left-0 right-0 h-0.5 bar-shimmer" />}
 
               <div className="p-6">
+                {/* Agent header */}
                 <div className="flex justify-between items-start mb-5">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center font-display font-extrabold text-lg transition-all duration-500 ${
+                    <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center font-display font-extrabold text-lg transition-all duration-500 ${
                       justDelegated
-                        ? 'bg-gradient-to-br from-indigo-50 to-purple-100 border-indigo-200 text-indigo-700 scale-110'
+                        ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-300 text-indigo-700 scale-110 a2a-pulse'
                         : isDelegating
-                        ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-100 text-emerald-700 animate-pulse'
+                        ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-700 animate-pulse'
                         : 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-100 text-emerald-700'
                     }`}>
                       {agent.name.charAt(0)}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-lg font-display font-bold text-slate-900">{agent.name}</h3>
                         {justDelegated && (
-                          <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest animate-fade-in-up">
+                          <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest animate-fade-in-up">
                             A2A
+                          </span>
+                        )}
+                        {isDelegating && (
+                          <span className="bg-purple-50 text-purple-600 border border-purple-100 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest animate-pulse">
+                            Delegating…
                           </span>
                         )}
                       </div>
@@ -99,6 +253,7 @@ export default function TeamTab({
                   </div>
                 </div>
 
+                {/* Pending approval banner */}
                 {result?.pending_approval && (
                   <div className="mb-4 p-4 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-between gap-3">
                     <div>
@@ -115,6 +270,7 @@ export default function TeamTab({
                   </div>
                 )}
 
+                {/* Task input */}
                 <div className="mb-4">
                   <textarea
                     className="w-full bg-white border border-slate-200 p-4 rounded-2xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none"
@@ -126,11 +282,15 @@ export default function TeamTab({
                   <div className="flex justify-end mt-2">
                     <button
                       onClick={() => handleTaskAssign(agent.id)}
-                      disabled={loadingTasks[agent.id] || !taskInputs[agent.id]}
-                      className="bg-slate-900 text-white rounded-2xl px-5 py-2.5 text-sm font-bold hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2"
+                      disabled={isDelegating || !taskInputs[agent.id]}
+                      className={`rounded-2xl px-5 py-2.5 text-sm font-bold active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2 ${
+                        isDelegating
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/25'
+                          : 'bg-slate-900 text-white hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25'
+                      }`}
                     >
-                      {loadingTasks[agent.id] ? (
-                        <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Thinking…</>
+                      {isDelegating ? (
+                        <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Delegating…</>
                       ) : (
                         <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>Deploy</>
                       )}
@@ -138,32 +298,22 @@ export default function TeamTab({
                   </div>
                 </div>
 
-                {result?.result && (
-                  <div className={`mb-4 rounded-xl max-h-56 overflow-y-auto animate-fade-in-up ${
-                    result.delegated
-                      ? 'bg-indigo-50 border border-indigo-100'
-                      : 'bg-emerald-50 border border-emerald-100'
-                  }`}>
-                    {result.delegated ? (
-                      <div className="px-4 pt-4 pb-1 border-b border-indigo-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 pulse-dot" />
-                          <span className="text-indigo-700 text-xs font-bold uppercase tracking-widest">A2A Pipeline</span>
+                {/* A2A in-flight animation */}
+                {isDelegating && <DelegationInFlight agentName={agent.name} />}
+
+                {/* Result rendering */}
+                {result?.result && !isDelegating && (
+                  parsed?.isA2A
+                    ? <A2APipelineResult parsed={parsed} />
+                    : (
+                      <div className="mb-4 rounded-xl overflow-hidden animate-fade-in-up bg-emerald-50 border border-emerald-100">
+                        <div className="px-4 pt-4 pb-1 border-b border-emerald-100 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" />
+                          <span className="text-emerald-700 text-xs font-bold uppercase tracking-widest">Execution Output</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-indigo-500 font-bold">
-                          <span>{agent.name}</span>
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                          <span>{result.delegated_to}</span>
-                        </div>
+                        <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed p-4 max-h-56 overflow-y-auto">{result.result}</p>
                       </div>
-                    ) : (
-                      <div className="px-4 pt-4 pb-1 border-b border-emerald-100 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" />
-                        <span className="text-emerald-700 text-xs font-bold uppercase tracking-widest">Execution Output</span>
-                      </div>
-                    )}
-                    <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed p-4">{result.result}</p>
-                  </div>
+                    )
                 )}
 
                 <button
