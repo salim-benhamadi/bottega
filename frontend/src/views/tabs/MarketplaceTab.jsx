@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import StarRating from '../../components/StarRating';
+import AgentAvatar from '../../components/AgentAvatar';
 
 export default function MarketplaceTab({
   marketplace,
@@ -73,9 +74,7 @@ export default function MarketplaceTab({
 
             <div className="p-6 flex-1 flex flex-col">
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-100 flex items-center justify-center text-slate-500 font-display font-extrabold text-lg">
-                  {agent.name.charAt(0)}
-                </div>
+                <AgentAvatar name={agent.name} role={agent.role} size={48} />
                 <div className="flex flex-col items-end gap-1">
                   {agent.is_official
                     ? <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-widest flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-emerald-500" />Official</span>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AgentAvatar from '../../components/AgentAvatar';
 
 // Parse the structured A2A result text produced by tasks.py
 function parseA2AResult(text) {
@@ -224,14 +225,12 @@ export default function TeamTab({
                 {/* Agent header */}
                 <div className="flex justify-between items-start mb-5">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center font-display font-extrabold text-lg transition-all duration-500 ${
-                      justDelegated
-                        ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-300 text-indigo-700 scale-110 a2a-pulse'
-                        : isDelegating
-                        ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-700 animate-pulse'
-                        : 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-100 text-emerald-700'
+                    <div className={`rounded-xl overflow-hidden transition-all duration-500 ${
+                      justDelegated ? 'ring-2 ring-indigo-400 scale-110 a2a-pulse'
+                      : isDelegating ? 'ring-2 ring-emerald-300 animate-pulse'
+                      : ''
                     }`}>
-                      {agent.name.charAt(0)}
+                      <AgentAvatar name={agent.name} role={agent.role} size={48} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
