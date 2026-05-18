@@ -61,6 +61,13 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
             text_to_delegate = result_text[delegation_match.end():].strip() or req.task_description
             target_agent = await _auto_hire_agent(target_id, current_user)
             if target_agent:
+                # Notify user the moment delegation is triggered — before execution
+                skill_label = skill_key.replace("_", " ")
+                await _create_notification(
+                    current_user, "a2a_delegation",
+                    f"⚡ {agent['name']} needs a specialist: hiring {target_agent['name']} for {skill_label}.",
+                )
+
                 t_resp = genai_client.models.generate_content(
                     model="gemini-2.5-flash", contents=text_to_delegate,
                     config=types.GenerateContentConfig(
@@ -72,6 +79,12 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
                     f"🔄 **A2A Pipeline: {agent['name']} → {target_agent['name']}**\n\n"
                     f"**Delegated Work:**\n{text_to_delegate}\n\n"
                     f"**Result from {target_agent['name']}:**\n{t_resp.text.strip()}"
+                )
+
+                # Notify user that the pipeline completed
+                await _create_notification(
+                    current_user, "a2a_complete",
+                    f"✅ A2A complete: {target_agent['name']} handed work back to {agent['name']}.",
                 )
 
     task_id = str(uuid.uuid4())

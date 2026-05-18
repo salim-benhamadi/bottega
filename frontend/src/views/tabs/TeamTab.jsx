@@ -45,22 +45,41 @@ export default function TeamTab({
         {team.map(agent => {
           const result = taskResults[agent.id];
           const isMeeting = agent.role === 'Meeting Analyst';
+          const isDelegating = loadingTasks[agent.id];
+          const justDelegated = result?.delegated && !isDelegating;
           return (
-            <div key={agent.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200/50 transition-all duration-200">
-              {/* Top accent line */}
-              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
-              {loadingTasks[agent.id] && (
+            <div key={agent.id} className={`bg-white rounded-2xl border shadow-sm flex flex-col relative overflow-hidden transition-all duration-300 ${
+              justDelegated
+                ? 'border-indigo-200 shadow-indigo-100 shadow-md'
+                : 'border-slate-100 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200/50'
+            }`}>
+              {/* Top accent line — indigo when A2A just fired */}
+              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${justDelegated ? 'from-indigo-500 via-purple-400 to-transparent' : 'from-emerald-500 via-teal-400 to-transparent'}`} />
+              {isDelegating && (
                 <div className="absolute top-0.5 left-0 right-0 h-0.5 bar-shimmer" />
               )}
 
               <div className="p-6">
                 <div className="flex justify-between items-start mb-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-100 flex items-center justify-center text-emerald-700 font-display font-extrabold text-lg">
+                    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center font-display font-extrabold text-lg transition-all duration-500 ${
+                      justDelegated
+                        ? 'bg-gradient-to-br from-indigo-50 to-purple-100 border-indigo-200 text-indigo-700 scale-110'
+                        : isDelegating
+                        ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-100 text-emerald-700 animate-pulse'
+                        : 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-100 text-emerald-700'
+                    }`}>
                       {agent.name.charAt(0)}
                     </div>
                     <div>
-                      <h3 className="text-lg font-display font-bold text-slate-900">{agent.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-display font-bold text-slate-900">{agent.name}</h3>
+                        {justDelegated && (
+                          <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest animate-fade-in-up">
+                            A2A
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500 font-medium">{agent.role}</p>
                     </div>
                   </div>
@@ -120,18 +139,30 @@ export default function TeamTab({
                 </div>
 
                 {result?.result && (
-                  <div className="mb-4 p-4 bg-emerald-50 border border-emerald-100 rounded-xl max-h-48 overflow-y-auto">
-                    <p className="text-emerald-700 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" />
-                      Execution Output
-                    </p>
-                    <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed">{result.result}</p>
-                    {result.delegated && (
-                      <p className="mt-2 pt-2 border-t border-emerald-100 text-xs text-indigo-600 font-bold flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                        Delegated → {result.delegated_to}
-                      </p>
+                  <div className={`mb-4 rounded-xl max-h-56 overflow-y-auto animate-fade-in-up ${
+                    result.delegated
+                      ? 'bg-indigo-50 border border-indigo-100'
+                      : 'bg-emerald-50 border border-emerald-100'
+                  }`}>
+                    {result.delegated ? (
+                      <div className="px-4 pt-4 pb-1 border-b border-indigo-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 pulse-dot" />
+                          <span className="text-indigo-700 text-xs font-bold uppercase tracking-widest">A2A Pipeline</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-indigo-500 font-bold">
+                          <span>{agent.name}</span>
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                          <span>{result.delegated_to}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="px-4 pt-4 pb-1 border-b border-emerald-100 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" />
+                        <span className="text-emerald-700 text-xs font-bold uppercase tracking-widest">Execution Output</span>
+                      </div>
                     )}
+                    <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed p-4">{result.result}</p>
                   </div>
                 )}
 

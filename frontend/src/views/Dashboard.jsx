@@ -332,12 +332,19 @@ export default function Dashboard({ token, setToken, apiUrl }) {
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {notifications.length === 0 && <p className="text-center text-slate-400 text-sm py-8 font-medium">No notifications yet</p>}
-                  {notifications.map(n => (
-                    <div key={n.id} className={`px-4 py-3 border-b border-slate-50 text-sm ${n.read ? 'opacity-40' : 'bg-emerald-50/50 border-l-2 border-l-emerald-400'}`}>
-                      <p className="text-slate-700 font-medium leading-snug">{n.message}</p>
-                      <p className="text-slate-400 text-xs mt-1">{new Date(n.created_at).toLocaleString()}</p>
-                    </div>
-                  ))}
+                  {notifications.map(n => {
+                    const isA2A = n.type === 'a2a_delegation' || n.type === 'a2a_complete';
+                    return (
+                      <div key={n.id} className={`px-4 py-3 border-b border-slate-50 text-sm ${
+                        n.read ? 'opacity-40' :
+                        isA2A ? 'bg-indigo-50/60 border-l-2 border-l-indigo-400' :
+                        'bg-emerald-50/50 border-l-2 border-l-emerald-400'
+                      }`}>
+                        <p className={`font-medium leading-snug ${isA2A && !n.read ? 'text-indigo-800' : 'text-slate-700'}`}>{n.message}</p>
+                        <p className="text-slate-400 text-xs mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
