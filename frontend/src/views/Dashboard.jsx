@@ -470,6 +470,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               creatorForm={creatorForm}
               setCreatorForm={setCreatorForm}
               handleCreateAgent={handleCreateAgent}
+              token={token}
+              apiUrl={apiUrl}
             />
           )}
 
