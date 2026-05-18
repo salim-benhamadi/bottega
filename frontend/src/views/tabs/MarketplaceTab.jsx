@@ -142,11 +142,18 @@ export default function MarketplaceTab({
                     className="border border-slate-200 text-slate-600 rounded-xl px-3 py-2 text-xs font-bold hover:border-emerald-300 hover:text-emerald-600 transition-all">
                     AI Act
                   </button>
-                  <button onClick={() => handleHire(agent.id)}
-                    className="bg-emerald-500 text-white rounded-2xl px-5 py-2.5 font-bold hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95 transition-all flex items-center gap-1.5">
-                    Hire
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
-                  </button>
+                  {agent.is_hired ? (
+                    <span className="bg-slate-100 text-slate-500 border border-slate-200 rounded-2xl px-5 py-2.5 font-bold text-sm flex items-center gap-1.5 cursor-default">
+                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
+                      In Team
+                    </span>
+                  ) : (
+                    <button onClick={() => handleHire(agent.id)}
+                      className="bg-emerald-500 text-white rounded-2xl px-5 py-2.5 font-bold hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95 transition-all flex items-center gap-1.5">
+                      Hire
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

@@ -8,9 +8,18 @@ from database import db
 
 router = APIRouter(prefix="/api")
 
-@router.get("/marketplace", response_model=List[models.Agent])
+@router.get("/marketplace")
 async def get_marketplace(current_user: str = Depends(auth.get_current_user)):
-    return await db.marketplace_agents.find().to_list(200)
+    agents = await db.marketplace_agents.find().to_list(200)
+    hired_ids = {
+        a["id"] async for a in db.user_agents.find({"user_email": current_user}, {"id": 1})
+    }
+    result = []
+    for a in agents:
+        a.pop("_id", None)
+        a["is_hired"] = a.get("id") in hired_ids
+        result.append(a)
+    return result
 
 @router.post("/marketplace", response_model=models.Agent)
 async def create_marketplace_agent(agent_in: models.AgentCreate, current_user: str = Depends(auth.get_current_user)):
