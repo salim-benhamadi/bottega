@@ -68,6 +68,10 @@ class TaskResponse(BaseModel):
     delegated_to: str = ""
     task_id: str = ""
     pending_approval: bool = False
+    escalation: Optional[dict] = None
+
+class EscalationReply(BaseModel):
+    manager_response: str
 
 class AgentCreate(BaseModel):
     name: str

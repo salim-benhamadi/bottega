@@ -136,6 +136,10 @@ export default function TaskHistoryTab({
                       {task.delegated && <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">A2A Swarm</span>}
                       {task.pending_approval && <span className="bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">Pending Approval</span>}
                       {task.approved && !task.pending_approval && <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">Approved</span>}
+                      {task.escalation?.type === 'stop'            && <span className="bg-rose-50 text-rose-700 border border-rose-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">🛑 Stopped</span>}
+                      {task.escalation?.type === 'risky'           && <span className="bg-orange-50 text-orange-700 border border-orange-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">⚠️ Risk Flagged</span>}
+                      {task.escalation?.type === 'ask_manager'     && <span className="bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">💬 Asked Manager</span>}
+                      {task.escalation?.type === 'missing_context' && <span className="bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold px-2.5 py-0.5 rounded-md">📋 Missing Context</span>}
                     </div>
                     <p className="text-sm font-semibold text-slate-800 leading-relaxed">{task.task_description}</p>
                   </div>

@@ -39,19 +39,23 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
         f"Your Skills: {', '.join(agent['skills'])}\n\n"
         f"Your Dossier (company knowledge you must apply):\n"
         f"{dossier_text or 'No specific company knowledge yet.'}\n\n"
-        f"DELEGATION RULE: When the task explicitly involves any of these skills you don't have, "
-        f"you MUST output '[DELEGATE:skill_key]' on the very first line, then the delegated content. "
-        f"Delegation map: german_translation=German translation/German language, "
-        f"lead_research=lead generation/prospecting/finding prospects, "
-        f"legal_review=legal/contract/GDPR/compliance review, "
-        f"financial_analysis=financial/budget/P&L analysis, "
-        f"seo_analysis=SEO/keyword/search engine work, "
+        f"ESCALATION RULES — evaluate the task first, then output exactly ONE action token on line 1:\n"
+        f"  [CONTINUE]           — task is clear, within your skills, proceed.\n"
+        f"  [RISKY:reason]       — task has legal/financial/irreversible risk; describe it, then complete the task.\n"
+        f"  [STOP:reason]        — task is impossible or outside all capabilities; explain why, output nothing else.\n"
+        f"  [ASK:question]       — you need manager clarification before you can start; output only the question.\n"
+        f"  [CONTEXT:what]       — essential context is missing (names, dates, data); list exactly what is needed.\n"
+        f"  [DELEGATE:skill_key] — task requires a specialist you don't have; use this instead of [CONTINUE].\n\n"
+        f"DELEGATION MAP: german_translation=German translation, "
+        f"lead_research=lead generation/prospecting, "
+        f"legal_review=legal/contract/GDPR, "
+        f"financial_analysis=financial/budget/P&L, "
+        f"seo_analysis=SEO/keyword, "
         f"meeting_transcription=transcription/meeting notes, "
         f"content_strategy=content calendar/blog strategy, "
         f"data_analysis=data visualization/statistical analysis, "
         f"project_management=project planning/timeline. "
-        f"Available keys: {delegation_skills}. "
-        f"If no delegation needed, just complete the task directly."
+        f"Available keys: {delegation_skills}."
     )
 
     response = genai_client.models.generate_content(
@@ -59,6 +63,60 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
         config=types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.3),
     )
     result_text = response.text
+
+    # ── Parse escalation token from line 1 ──────────────────────────────────
+    escalation = None
+    escalation_match = re.match(
+        r"^\[(CONTINUE|RISKY|STOP|ASK|CONTEXT|DELEGATE)(?::([^\]]*))?\]\s*\n?",
+        result_text.strip(), re.IGNORECASE
+    )
+    if escalation_match:
+        esc_type  = escalation_match.group(1).upper()
+        esc_reason = (escalation_match.group(2) or "").strip()
+        # Strip the token from the body
+        result_text = result_text[escalation_match.end():].strip()
+
+        if esc_type == "STOP":
+            escalation = {"type": "stop", "reason": esc_reason or result_text}
+            task_doc = {
+                "task_id": str(uuid.uuid4()), "user_email": current_user,
+                "agent_id": agent_id, "agent_name": agent.get("name", ""),
+                "task_description": req.task_description,
+                "result": esc_reason or result_text,
+                "timestamp": datetime.utcnow().isoformat(),
+                "delegated": False, "approved": True, "pending_approval": False,
+                "escalation": escalation,
+            }
+            await db.tasks.insert_one(task_doc)
+            await _create_notification(current_user, "task_complete",
+                f"{agent['name']} stopped: {(esc_reason or '')[:80]}")
+            return models.TaskResponse(
+                result=esc_reason or result_text, task_id=task_doc["task_id"],
+                escalation=escalation)
+
+        elif esc_type in ("ASK", "CONTEXT"):
+            esc_label = "ask_manager" if esc_type == "ASK" else "missing_context"
+            escalation = {"type": esc_label, "reason": esc_reason or result_text}
+            task_id = str(uuid.uuid4())
+            task_doc = {
+                "task_id": task_id, "user_email": current_user,
+                "agent_id": agent_id, "agent_name": agent.get("name", ""),
+                "task_description": req.task_description,
+                "result": "", "timestamp": datetime.utcnow().isoformat(),
+                "delegated": False, "approved": False, "pending_approval": False,
+                "escalation": escalation, "escalation_resolved": False,
+            }
+            await db.tasks.insert_one(task_doc)
+            await _create_notification(current_user, "task_complete",
+                f"{agent['name']} needs your input: {(esc_reason or '')[:80]}")
+            return models.TaskResponse(
+                result="", task_id=task_id, escalation=escalation)
+
+        elif esc_type == "RISKY":
+            escalation = {"type": "risky", "reason": esc_reason}
+            # Fall through — task still executes, result_text already stripped
+
+        # CONTINUE or DELEGATE: fall through to normal execution
 
     delegated, delegated_to = False, ""
     delegation_match = re.search(r"\[DELEGATE:(\w+)\]", result_text)
@@ -103,6 +161,7 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
         "result": result_text, "timestamp": datetime.utcnow().isoformat(),
         "delegated": delegated, "approved": not is_probation,
         "pending_approval": is_probation, "pending_learning": None,
+        "escalation": escalation,
     }
 
     # Extract learning
@@ -131,7 +190,8 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
         f"{agent['name']} completed: \"{req.task_description[:60]}{'...' if len(req.task_description) > 60 else ''}\"")
 
     return models.TaskResponse(result=result_text, delegated=delegated, delegated_to=delegated_to,
-                               task_id=task_id, pending_approval=pending_approval)
+                               task_id=task_id, pending_approval=pending_approval,
+                               escalation=escalation)
 
 @router.post("/tasks/approve/{task_id}")
 async def approve_task(task_id: str, current_user: str = Depends(auth.get_current_user)):
@@ -146,6 +206,43 @@ async def approve_task(task_id: str, current_user: str = Depends(auth.get_curren
         )
     await db.tasks.update_one({"task_id": task_id}, {"$set": {"pending_approval": False, "approved": True}})
     return {"status": "approved"}
+
+@router.post("/tasks/escalation/{task_id}/resolve", response_model=models.TaskResponse)
+async def resolve_escalation(task_id: str, reply: models.EscalationReply, current_user: str = Depends(auth.get_current_user)):
+    """Re-run a paused task with the manager's context/answer appended."""
+    task = await db.tasks.find_one({"task_id": task_id, "user_email": current_user})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    agent = await db.user_agents.find_one({"id": task["agent_id"], "user_email": current_user})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    enriched = f"{task['task_description']}\n\n[Manager context]: {reply.manager_response}"
+
+    dossier_text = "\n".join([f"- {d['date']}: {d['skill_acquired']}" for d in agent.get("dossier", [])])
+    system_prompt = (
+        f"You are a specialized AI agent acting as a {agent['role']} for the company.\n"
+        f"Your Skills: {', '.join(agent['skills'])}\n\n"
+        f"Your Dossier:\n{dossier_text or 'None.'}\n\n"
+        f"The manager has provided context. Complete the task now."
+    )
+
+    response = genai_client.models.generate_content(
+        model="gemini-2.5-flash", contents=enriched,
+        config=types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.3),
+    )
+    result_text = response.text.strip()
+
+    await db.tasks.update_one(
+        {"task_id": task_id},
+        {"$set": {"result": result_text, "escalation_resolved": True, "approved": True}},
+    )
+    await _create_notification(current_user, "task_complete",
+        f"{agent['name']} completed after your input: \"{task['task_description'][:60]}\"")
+
+    return models.TaskResponse(result=result_text, task_id=task_id)
+
 
 @router.get("/tasks/history")
 async def get_task_history(

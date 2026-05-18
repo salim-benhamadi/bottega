@@ -160,6 +160,20 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     setTaskInputs(prev => ({ ...prev, [agentId]: '' }));
   };
 
+  const handleEscalationResolve = async (agentId, taskId, managerResponse) => {
+    setLoadingTasks(prev => ({ ...prev, [agentId]: true }));
+    try {
+      const res = await fetch(`${apiUrl}/tasks/escalation/${taskId}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ manager_response: managerResponse }),
+      });
+      const data = await res.json();
+      setTaskResults(prev => ({ ...prev, [agentId]: data }));
+    } catch (e) { console.error(e); }
+    setLoadingTasks(prev => ({ ...prev, [agentId]: false }));
+  };
+
   const handleApproveTask = async (agentId) => {
     const td = taskResults[agentId];
     if (!td?.task_id) return;
@@ -377,6 +391,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               handleApproveTask={handleApproveTask}
               handleEndProbation={handleEndProbation}
               fetchPerformance={fetchPerformance}
+              handleEscalationResolve={handleEscalationResolve}
             />
           )}
 

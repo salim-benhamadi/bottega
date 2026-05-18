@@ -147,6 +147,50 @@ function A2APipelineResult({ parsed }) {
   );
 }
 
+const ESCALATION_CONFIG = {
+  stop:            { bg: 'bg-rose-50',   border: 'border-rose-200',   dot: 'bg-rose-500',   text: 'text-rose-700',   label: 'Agent Stopped',         icon: '🛑' },
+  risky:           { bg: 'bg-orange-50', border: 'border-orange-200', dot: 'bg-orange-500', text: 'text-orange-700', label: 'Risk Flagged',           icon: '⚠️' },
+  ask_manager:     { bg: 'bg-amber-50',  border: 'border-amber-200',  dot: 'bg-amber-500',  text: 'text-amber-700',  label: 'Needs Your Input',       icon: '💬' },
+  missing_context: { bg: 'bg-blue-50',   border: 'border-blue-200',   dot: 'bg-blue-500',   text: 'text-blue-700',   label: 'Missing Context',        icon: '📋' },
+};
+
+function EscalationBanner({ escalation, taskId, agentId, onResolve, isLoading }) {
+  const [reply, setReply] = React.useState('');
+  const cfg = ESCALATION_CONFIG[escalation.type];
+  if (!cfg) return null;
+
+  const needsReply = escalation.type === 'ask_manager' || escalation.type === 'missing_context';
+
+  return (
+    <div className={`mb-4 rounded-2xl border ${cfg.border} ${cfg.bg} overflow-hidden animate-fade-in-up`}>
+      <div className={`px-4 pt-3.5 pb-3 border-b ${cfg.border} flex items-center gap-2`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+        <span className={`text-xs font-bold uppercase tracking-widest ${cfg.text}`}>{cfg.icon} {cfg.label}</span>
+      </div>
+      <div className="p-4">
+        <p className={`text-sm font-medium ${cfg.text} leading-relaxed mb-3`}>{escalation.reason}</p>
+        {needsReply && (
+          <div className="flex gap-2">
+            <input
+              className="flex-1 text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 font-medium placeholder-slate-400"
+              placeholder={escalation.type === 'ask_manager' ? 'Your answer…' : 'Provide the missing context…'}
+              value={reply}
+              onChange={e => setReply(e.target.value)}
+            />
+            <button
+              onClick={() => { if (reply.trim()) onResolve(agentId, taskId, reply); }}
+              disabled={!reply.trim() || isLoading}
+              className="bg-slate-900 text-white rounded-xl px-4 py-2 text-xs font-bold hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-40 shrink-0"
+            >
+              {isLoading ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Continue →'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TeamTab({
   team,
   setActiveTab,
@@ -158,7 +202,8 @@ export default function TeamTab({
   handleTaskAssign,
   handleApproveTask,
   handleEndProbation,
-  fetchPerformance
+  fetchPerformance,
+  handleEscalationResolve,
 }) {
   return (
     <div>
@@ -316,15 +361,28 @@ export default function TeamTab({
                 {/* A2A in-flight animation */}
                 {isDelegating && <DelegationInFlight agentName={agent.name} />}
 
+                {/* Escalation banner */}
+                {result?.escalation && !isDelegating && (
+                  <EscalationBanner
+                    escalation={result.escalation}
+                    taskId={result.task_id}
+                    agentId={agent.id}
+                    onResolve={handleEscalationResolve}
+                    isLoading={isDelegating}
+                  />
+                )}
+
                 {/* Result rendering */}
-                {result?.result && !isDelegating && (
+                {result?.result && !isDelegating && !['stop','ask_manager','missing_context'].includes(result?.escalation?.type) && (
                   parsed?.isA2A
                     ? <A2APipelineResult parsed={parsed} />
                     : (
-                      <div className="mb-4 rounded-xl overflow-hidden animate-fade-in-up bg-emerald-50 border border-emerald-100">
-                        <div className="px-4 pt-4 pb-1 border-b border-emerald-100 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot" />
-                          <span className="text-emerald-700 text-xs font-bold uppercase tracking-widest">Execution Output</span>
+                      <div className={`mb-4 rounded-xl overflow-hidden animate-fade-in-up ${result?.escalation?.type === 'risky' ? 'bg-orange-50 border border-orange-100' : 'bg-emerald-50 border border-emerald-100'}`}>
+                        <div className={`px-4 pt-4 pb-1 border-b flex items-center gap-1.5 ${result?.escalation?.type === 'risky' ? 'border-orange-100' : 'border-emerald-100'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full pulse-dot ${result?.escalation?.type === 'risky' ? 'bg-orange-500' : 'bg-emerald-500'}`} />
+                          <span className={`text-xs font-bold uppercase tracking-widest ${result?.escalation?.type === 'risky' ? 'text-orange-700' : 'text-emerald-700'}`}>
+                            {result?.escalation?.type === 'risky' ? '⚠️ Completed with Risk' : 'Execution Output'}
+                          </span>
                         </div>
                         <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed p-4 max-h-56 overflow-y-auto">{result.result}</p>
                       </div>
