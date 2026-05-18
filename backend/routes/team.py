@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 import models
 import auth
 from database import db
-from shared import _create_notification
+from shared import _create_notification, _log_credit_tx
 
 router = APIRouter(prefix="/api")
 
@@ -27,6 +27,7 @@ async def hire_agent(agent_id: str, current_user: str = Depends(auth.get_current
         raise HTTPException(status_code=400, detail=f"Insufficient credits. Need {agent['price_credits']}, have {balance}.")
 
     await db.users.update_one({"email": current_user}, {"$inc": {"credit_balance": -agent["price_credits"]}})
+    await _log_credit_tx(current_user, -agent["price_credits"], "hire", f"Hired {agent['name']} ({agent['price_credits']} cr)")
 
     hired = dict(agent)
     hired.update(is_hired=True, probation_mode=True, user_email=current_user,

@@ -59,12 +59,26 @@ async def _create_notification(user_email: str, notif_type: str, message: str):
         "created_at": datetime.utcnow().isoformat(),
     })
 
+async def _log_credit_tx(user_email: str, amount: int, tx_type: str, description: str):
+    await db.credit_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_email": user_email,
+        "amount": amount,
+        "type": tx_type,
+        "description": description,
+        "created_at": datetime.utcnow().isoformat(),
+    })
+
 async def _auto_hire_agent(agent_id: str, user_email: str):
     target = await db.marketplace_agents.find_one({"id": agent_id})
     if not target:
         return None
     existing = await db.user_agents.find_one({"id": agent_id, "user_email": user_email})
     if not existing:
+        cost = target.get("price_credits", 0)
+        if cost > 0:
+            await db.users.update_one({"email": user_email}, {"$inc": {"credit_balance": -cost}})
+            await _log_credit_tx(user_email, -cost, "a2a_hire", f"A2A auto-hire: {target['name']} ({cost} cr)")
         hired = dict(target)
         hired["is_hired"] = True
         hired["probation_mode"] = True

@@ -32,13 +32,15 @@ import SettingsTab from './tabs/SettingsTab';
 import PerformanceReviewTab from './tabs/PerformanceReviewTab';
 
 export default function Dashboard({ token, setToken, apiUrl }) {
-  const [activeTab, setActiveTab] = useState('team');
+  const [activeTab, setActiveTab] = useState('tutorial');
   const [tutorialStep, setTutorialStep] = useState(1);
 
   // Data
   const [team, setTeam] = useState([]);
   const [marketplace, setMarketplace] = useState([]);
   const [standup, setStandup] = useState(null);
+  const [creditHistory, setCreditHistory] = useState([]);
+  const [regeneratingStandup, setRegeneratingStandup] = useState(false);
   const [performance, setPerformance] = useState(null);
   const [agentTasks, setAgentTasks] = useState([]);       // tasks for the current performance agent
   const [taskHistory, setTaskHistory] = useState([]);
@@ -110,6 +112,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     if (activeTab === 'analytics') { setAnalytics(null); fetchWithAuth('/analytics').then(setAnalytics); }
     if (activeTab === 'creator') fetchWithAuth('/creator/stats').then(setCreatorStats);
     if (activeTab === 'settings' && userInfo) setSettingsForm({ company_name: userInfo.company_name || '' });
+    if (activeTab === 'settings') fetchWithAuth('/credits/history').then(data => { if (Array.isArray(data)) setCreditHistory(data); });
+    if (activeTab === 'tutorial') {} // no fetch needed
   }, [activeTab]);
 
   // Actions
@@ -130,6 +134,12 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     await fetchWithAuth(`/team/${agentId}`, { method: 'DELETE' });
     fetchWithAuth('/team').then(setTeam);
     showToast(`${agentName} has been removed from your team.`);
+  };
+
+  const regenerateStandup = async () => {
+    setRegeneratingStandup(true);
+    setStandup(null);
+    fetchWithAuth('/standup').then(data => { setStandup(data); setRegeneratingStandup(false); });
   };
 
   const handleTaskAssign = async (agentId) => {
@@ -371,7 +381,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
           )}
 
           {activeTab === 'standup' && (
-            <DailyBriefingTab standup={standup} />
+            <DailyBriefingTab standup={standup} onRegenerate={regenerateStandup} regenerating={regeneratingStandup} />
           )}
 
           {activeTab === 'meeting' && (
@@ -445,6 +455,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               handleTopup={handleTopup}
               handleChangePassword={handleChangePassword}
               handleDeleteAccount={handleDeleteAccount}
+              creditHistory={creditHistory}
             />
           )}
 

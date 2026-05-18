@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import StarRating from '../../components/StarRating';
 
 export default function MarketplaceTab({
@@ -17,6 +17,8 @@ export default function MarketplaceTab({
   setComplianceAgent,
   handleHire
 }) {
+  const [confirmingHire, setConfirmingHire] = useState(null);
+
   const filteredMarketplace = marketplace.filter(agent => {
     const term = marketplaceSearch.toLowerCase();
     const matchesSearch = agent.name.toLowerCase().includes(term) ||
@@ -147,8 +149,20 @@ export default function MarketplaceTab({
                       <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
                       In Team
                     </span>
+                  ) : confirmingHire === agent.id ? (
+                    <div className="flex items-center gap-1.5 animate-fade-in-up">
+                      <span className="text-xs font-bold text-slate-600">{agent.price_credits} cr</span>
+                      <button onClick={() => { handleHire(agent.id); setConfirmingHire(null); }}
+                        className="bg-emerald-500 text-white rounded-xl px-3 py-2 text-xs font-bold hover:bg-emerald-400 active:scale-95 transition-all">
+                        Confirm
+                      </button>
+                      <button onClick={() => setConfirmingHire(null)}
+                        className="text-xs text-slate-400 hover:text-slate-600 font-bold px-2 py-2 transition-colors">
+                        Cancel
+                      </button>
+                    </div>
                   ) : (
-                    <button onClick={() => handleHire(agent.id)}
+                    <button onClick={() => setConfirmingHire(agent.id)}
                       className="bg-emerald-500 text-white rounded-2xl px-5 py-2.5 font-bold hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95 transition-all flex items-center gap-1.5">
                       Hire
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>

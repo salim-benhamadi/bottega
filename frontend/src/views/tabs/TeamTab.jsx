@@ -176,6 +176,19 @@ export default function TeamTab({
         )}
       </div>
 
+      {team.length > 0 && (
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
+          <span className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-600">
+            {team.length} agent{team.length !== 1 ? 's' : ''}
+          </span>
+          {team.filter(a => a.probation_mode).length > 0 && (
+            <span className="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2 text-xs font-bold text-amber-700">
+              {team.filter(a => a.probation_mode).length} in probation
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {team.length === 0 && (
           <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
@@ -199,7 +212,7 @@ export default function TeamTab({
             <div key={agent.id} className={`bg-white rounded-2xl border shadow-sm flex flex-col relative overflow-hidden transition-all duration-300 ${
               justDelegated
                 ? 'border-indigo-200 shadow-indigo-100/60 shadow-lg'
-                : 'border-slate-100 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200/50'
+                : `border-slate-100 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200/50 ${agent.probation_mode && !justDelegated ? 'border-amber-200 shadow-amber-50' : ''}`
             }`}>
               {/* Top accent line */}
               <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r transition-all duration-500 ${
@@ -235,6 +248,9 @@ export default function TeamTab({
                         )}
                       </div>
                       <p className="text-xs text-slate-500 font-medium">{agent.role}</p>
+                      {agent.skills?.some(s => ['Copywriting','Sales','Proposal','Legal','Financial','SEO','German','Translation','Lead','Data','Content','Project','Meeting'].some(k => s.includes(k))) && (
+                        <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">A2A capable</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
@@ -318,7 +334,7 @@ export default function TeamTab({
 
                 <button
                   onClick={() => fetchPerformance(agent.id)}
-                  className="w-full border border-slate-200 text-slate-600 rounded-xl py-2.5 text-xs font-bold hover:border-emerald-300 hover:text-emerald-600 transition-all flex items-center justify-center gap-1.5"
+                  className="w-full border border-slate-200 text-slate-600 rounded-xl py-2.5 text-xs font-bold hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition-all flex items-center justify-center gap-1.5"
                 >
                   View Dossier & Performance
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>

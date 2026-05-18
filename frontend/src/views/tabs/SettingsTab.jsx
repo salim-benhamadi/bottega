@@ -14,7 +14,8 @@ export default function SettingsTab({
   handleSaveProfile,
   handleTopup,
   handleChangePassword,
-  handleDeleteAccount
+  handleDeleteAccount,
+  creditHistory = []
 }) {
   return (
     <div className="max-w-2xl mx-auto">
@@ -130,6 +131,32 @@ export default function SettingsTab({
                 Update Credentials
               </button>
             </form>
+          </div>
+        </div>
+
+        {/* Credit History */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+          <div className="p-8">
+            <h3 className="text-xl font-display font-bold text-slate-900 mb-2">Credit History</h3>
+            <p className="text-slate-500 font-medium mb-5">Last 50 transactions on your account.</p>
+            {creditHistory.length === 0 ? (
+              <p className="text-sm text-slate-400 font-medium">No transactions yet.</p>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {creditHistory.map((tx, i) => (
+                  <div key={i} className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{tx.description}</p>
+                      <p className="text-xs text-slate-400 font-medium mt-0.5">{new Date(tx.created_at).toLocaleString()}</p>
+                    </div>
+                    <span className={`text-sm font-extrabold tabular-nums ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                      {tx.amount > 0 ? '+' : ''}{tx.amount} cr
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

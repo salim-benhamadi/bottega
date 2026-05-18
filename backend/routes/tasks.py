@@ -39,10 +39,19 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
         f"Your Skills: {', '.join(agent['skills'])}\n\n"
         f"Your Dossier (company knowledge you must apply):\n"
         f"{dossier_text or 'No specific company knowledge yet.'}\n\n"
-        f"DELEGATION RULE: If the task requires expertise strictly outside your skills, "
-        f"output '[DELEGATE:skill_key]' on its own line followed by the content to hand off. "
-        f"Available delegation skills: {delegation_skills}. "
-        f"Otherwise, just complete the task and provide the final result."
+        f"DELEGATION RULE: When the task explicitly involves any of these skills you don't have, "
+        f"you MUST output '[DELEGATE:skill_key]' on the very first line, then the delegated content. "
+        f"Delegation map: german_translation=German translation/German language, "
+        f"lead_research=lead generation/prospecting/finding prospects, "
+        f"legal_review=legal/contract/GDPR/compliance review, "
+        f"financial_analysis=financial/budget/P&L analysis, "
+        f"seo_analysis=SEO/keyword/search engine work, "
+        f"meeting_transcription=transcription/meeting notes, "
+        f"content_strategy=content calendar/blog strategy, "
+        f"data_analysis=data visualization/statistical analysis, "
+        f"project_management=project planning/timeline. "
+        f"Available keys: {delegation_skills}. "
+        f"If no delegation needed, just complete the task directly."
     )
 
     response = genai_client.models.generate_content(

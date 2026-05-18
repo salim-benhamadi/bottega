@@ -1,5 +1,40 @@
 import React from 'react';
 
+function SpecializationChart({ specializations }) {
+  if (specializations.length === 0) return null;
+  // Group by month
+  const counts = {};
+  specializations.forEach(s => {
+    const month = s.date ? s.date.slice(0, 7) : 'Unknown';
+    counts[month] = (counts[month] || 0) + 1;
+  });
+  const entries = Object.entries(counts).sort(([a], [b]) => a.localeCompare(b));
+  const max = Math.max(...entries.map(([,v]) => v), 1);
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden mb-5">
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+      <div className="p-7">
+        <h3 className="text-lg font-display font-bold text-slate-900 mb-0.5">Specialization Growth</h3>
+        <p className="text-xs text-slate-500 font-medium mb-5">Knowledge entries accumulated per month.</p>
+        <div className="flex items-end gap-3" style={{ height: 80 }}>
+          {entries.map(([month, count]) => (
+            <div key={month} className="flex-1 flex flex-col items-center justify-end gap-1.5 h-full">
+              <span className="text-[10px] font-bold text-slate-500">{count}</span>
+              <div
+                className="w-full rounded-t-lg bg-gradient-to-t from-emerald-500 to-teal-400 transition-all duration-700"
+                style={{ height: `${Math.max((count / max) * 100, 8)}%` }}
+              />
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                {new Date(month + '-01').toLocaleDateString('en', { month: 'short' })}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PerformanceReviewTab({
   performance,
   agentTasks,
@@ -57,6 +92,8 @@ export default function PerformanceReviewTab({
           </div>
         </div>
       </div>
+
+      <SpecializationChart specializations={performance.specializations} />
 
       {/* Recent activity */}
       {agentTasks.length > 0 && (

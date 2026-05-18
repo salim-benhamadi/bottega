@@ -60,6 +60,50 @@ export default function Home({ token }) {
           </div>
         </div>
       </main>
+
+      {/* Features section */}
+      <section className="relative z-10 max-w-7xl mx-auto px-8 py-24 border-t border-slate-100">
+        <div className="text-center mb-16">
+          <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-3">How it works</p>
+          <h2 className="text-4xl font-display font-extrabold text-slate-900">Your AI team, managed like people</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { icon: '🛍', title: 'Hire in minutes', body: 'Browse 15+ specialized agents — each with skills, pricing, and an EU AI Act compliance card. No setup, no code.', accent: 'emerald' },
+            { icon: '⚡', title: 'Delegate outcomes', body: 'Assign tasks in plain English. Agents coordinate autonomously via A2A delegation when they need a specialist.', accent: 'indigo' },
+            { icon: '🧠', title: 'They grow with you', body: 'Every task builds your agent\'s private Dossier. Over time, they become experts on your business — not just generic AI.', accent: 'teal' },
+          ].map(f => (
+            <div key={f.title} className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm hover:-translate-y-1 transition-all">
+              <div className="text-4xl mb-4">{f.icon}</div>
+              <h3 className="text-xl font-display font-bold text-slate-900 mb-3">{f.title}</h3>
+              <p className="text-slate-500 leading-relaxed font-medium">{f.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Why Bottega */}
+      <section className="relative z-10 max-w-7xl mx-auto px-8 pb-24">
+        <div className="bg-slate-900 rounded-[2rem] p-10 md:p-14">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-display font-extrabold text-white mb-3">Built for managers, not developers</h2>
+            <p className="text-slate-400 font-medium">The only AI platform designed for the people who actually run businesses.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            {[
+              { label: 'Setup time', bottega: '5 minutes', others: 'Days of config' },
+              { label: 'EU AI Act', bottega: '✓ Native compliance', others: '✗ Retrofit required' },
+              { label: 'Agent growth', bottega: 'Learns your business', others: 'Static & generic' },
+            ].map(row => (
+              <div key={row.label} className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">{row.label}</p>
+                <p className="text-emerald-400 font-bold text-sm mb-1">{row.bottega}</p>
+                <p className="text-slate-500 text-xs font-medium line-through">{row.others}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
