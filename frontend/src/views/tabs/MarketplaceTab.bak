@@ -1,0 +1,123 @@
+import React from 'react';
+import StarRating from '../../components/StarRating';
+
+export default function MarketplaceTab({
+  marketplace,
+  marketplaceSearch,
+  setMarketplaceSearch,
+  marketplaceFilter,
+  setMarketplaceFilter,
+  agentRatings,
+  ratingInputs,
+  setRatingInputs,
+  reviewInputs,
+  setReviewInputs,
+  loadRatings,
+  handleRateAgent,
+  setComplianceAgent,
+  handleHire
+}) {
+  const filteredMarketplace = marketplace.filter(agent => {
+    const term = marketplaceSearch.toLowerCase();
+    const matchesSearch = agent.name.toLowerCase().includes(term) ||
+      agent.role.toLowerCase().includes(term) ||
+      agent.skills.some(s => s.toLowerCase().includes(term));
+
+    if (!matchesSearch) return false;
+    if (marketplaceFilter === 'official') return agent.is_official;
+    if (marketplaceFilter === 'community') return !agent.is_official;
+    return true;
+  });
+
+  return (
+    <div className="max-w-7xl mx-auto">
+      <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div><h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Marketplace</h1><p className="text-slate-500 font-medium text-lg">{filteredMarketplace.length} of {marketplace.length} specialized agents available.</p></div>
+        
+        {/* Search + filter */}
+        <div className="flex flex-wrap gap-3">
+          <div className="relative group flex-1 md:w-64">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-500 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+            <input className="w-full bg-white/80 backdrop-blur-md border border-white shadow-[0_10px_20px_-10px_rgba(0,0,0,0.05)] pl-11 pr-4 py-4 rounded-2xl text-sm font-medium text-slate-700 placeholder-slate-400 outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all" placeholder="Search skills or roles…" value={marketplaceSearch} onChange={e=>setMarketplaceSearch(e.target.value)} />
+          </div>
+          <div className="flex bg-white/80 backdrop-blur-md rounded-2xl p-1 shadow-[0_10px_20px_-10px_rgba(0,0,0,0.05)] border border-white">
+            {['all','official','community'].map(f=>(
+              <button key={f} onClick={()=>setMarketplaceFilter(f)} className={`px-5 py-3 rounded-xl text-sm font-bold transition-all ${marketplaceFilter===f?'bg-slate-900 text-white shadow-md':'bg-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50/50'}`}>
+                {f==='all'?'All':f==='official'?'Official':'Community'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {filteredMarketplace.length===0&&(
+          <div className="col-span-full py-24 text-center text-slate-400 text-lg font-medium border-2 border-dashed border-slate-200/50 rounded-[3rem] bg-white/50 backdrop-blur-sm">No agents match your search.</div>
+        )}
+        {filteredMarketplace.map(agent=>(
+          <div key={agent.id} className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] border border-white flex flex-col relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+            {/* Hover Glow Effect */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-400/10 rounded-full blur-[50px] z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+            
+            <div className="flex-1 relative z-10">
+              <div className="flex items-start justify-between mb-6">
+                <div className="w-16 h-16 rounded-[1.25rem] bg-gradient-to-br from-slate-100 to-slate-50 border border-white shadow-sm flex items-center justify-center text-slate-400 font-display font-extrabold text-2xl group-hover:scale-110 group-hover:from-emerald-50 group-hover:to-emerald-100 group-hover:text-emerald-500 group-hover:border-emerald-200 transition-all duration-500">{agent.name.charAt(0)}</div>
+                <div className="flex flex-col items-end gap-1.5">
+                  {agent.is_official
+                    ? <span className="text-[10px] bg-emerald-100/50 text-emerald-700 px-3 py-1 rounded-lg border border-emerald-200/50 font-bold uppercase tracking-widest flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Official</span>
+                    : <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-lg border border-slate-200 font-bold uppercase tracking-widest">Community</span>}
+                  {agent.compliance?.risk_level==='Medium'&&<span className="text-[10px] bg-amber-100/50 text-amber-700 px-3 py-1 rounded-lg border border-amber-200/50 font-bold uppercase tracking-widest">Medium Risk</span>}
+                  {agent.id==='a5'&&<span className="text-[10px] bg-indigo-100/50 text-indigo-700 px-3 py-1 rounded-lg border border-indigo-200/50 font-bold uppercase tracking-widest">Speechmatics</span>}
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-display font-bold text-slate-900 mb-1 tracking-tight">{agent.name}</h3>
+              <p className="text-sm font-medium text-slate-500 mb-4">{agent.role}</p>
+
+              {/* Rating */}
+              <div className="flex items-center gap-3 mb-5 bg-slate-50/50 w-fit px-3 py-1.5 rounded-xl">
+                <StarRating value={Math.round(agentRatings[agent.id]?.avg ?? agent.avg_rating ?? 0)} readonly size="text-sm" />
+                <span className="text-xs text-slate-500 font-bold">
+                  {(agentRatings[agent.id]?.avg ?? agent.avg_rating ?? 0).toFixed(1)} <span className="text-slate-400 font-medium">({agentRatings[agent.id]?.count ?? agent.rating_count ?? 0})</span>
+                </span>
+                {agent.hire_count > 0 && <><span className="w-1 h-1 rounded-full bg-slate-300"></span><span className="text-xs text-slate-500 font-bold">{agent.hire_count} hired</span></>}
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-6">{agent.skills.map(s=><span key={s} className="bg-slate-100/80 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 border border-slate-200/50">{s}</span>)}</div>
+
+              <div className="mb-6">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Capabilities</p>
+                <ul className="space-y-2">{agent.use_cases.slice(0,3).map(uc=><li key={uc} className="text-sm text-slate-600 font-medium flex items-start gap-2"><svg className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>{uc}</li>)}</ul>
+              </div>
+
+              {/* Rate this agent */}
+              <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/50 group-hover:bg-white transition-colors" onClick={()=>loadRatings(agent.id)}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rate this agent</p>
+                  <StarRating value={ratingInputs[agent.id]||0} onChange={v=>setRatingInputs(p=>({...p,[agent.id]:v}))} />
+                </div>
+                {ratingInputs[agent.id]>0&&(
+                  <div className="mt-3 flex gap-2 animate-fade-in-up">
+                    <input className="flex-1 text-sm bg-white border border-slate-200 px-4 py-2.5 rounded-xl outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 font-medium" placeholder="Optional review…" value={reviewInputs[agent.id]||''} onChange={e=>setReviewInputs(p=>({...p,[agent.id]:e.target.value}))} />
+                    <button onClick={()=>handleRateAgent(agent.id)} className="text-xs bg-slate-900 text-white px-4 py-2.5 rounded-xl font-bold hover:bg-emerald-500 transition-all shadow-md">Submit</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100/50 pt-6 mt-6 flex items-center justify-between gap-4 relative z-10">
+              <div>
+                <div className="text-2xl font-display font-extrabold text-slate-900 leading-none">{agent.price_credits}</div>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">cr / month</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={()=>setComplianceAgent(agent)} className="text-xs px-4 py-3 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 font-bold transition-all">AI Act</button>
+                <button onClick={()=>handleHire(agent.id)} className="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold shadow-[0_8px_16px_-6px_rgba(16,185,129,0.4)] hover:shadow-[0_12px_20px_-6px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all text-sm flex items-center gap-2">Hire <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg></button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

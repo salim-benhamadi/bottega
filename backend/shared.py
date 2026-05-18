@@ -1,0 +1,76 @@
+import os
+import uuid
+from datetime import datetime
+from dotenv import load_dotenv
+from google import genai
+import models
+from database import db
+
+load_dotenv()
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+SPEECHMATICS_API_KEY = os.environ.get("SPEECHMATICS_API_KEY")
+genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+DELEGATION_MAP = {
+    "german_translation": "a2",
+    "meeting_transcription": "a5",
+    "lead_research": "a3",
+    "office_management": "a4",
+    "legal_review": "a8",
+    "financial_analysis": "a9",
+    "seo_analysis": "a7",
+    "content_strategy": "a14",
+    "data_analysis": "a13",
+    "project_management": "a15",
+}
+
+def _make_compliance(risk, model, data, residency=True):
+    return models.AIActCompliance(
+        risk_level=risk, underlying_model=model, data_processed=data,
+        eu_data_residency=residency, audit_log=True,
+    )
+
+SEED_AGENTS = [
+    models.Agent(id="a1",  name="Proposal Writer Pro",   role="Proposal Writer",       is_official=True, skills=["Copywriting","Sales","Formatting","RFP Analysis"],                    use_cases=["Drafting client proposals","Reviewing RFPs","Responding to tenders","Executive summaries"],          price_credits=10,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Business documents")),
+    models.Agent(id="a2",  name="Translator Pro DE",      role="German Translator",      is_official=True, skills=["German Language","Legal Terminology","EU Regulations","Technical Translation"],             use_cases=["Translating legal docs","Translating proposals","EU compliance docs","Client communications"],      price_credits=8,   compliance=_make_compliance("Low","Gemini 2.5 Flash","Text documents")),
+    models.Agent(id="a3",  name="Lead Hunter Elite",      role="Lead Hunter",            is_official=True, skills=["Prospecting","Data Enrichment","LinkedIn Research","CRM Management"],                       use_cases=["Finding B2B leads","Qualifying prospects","Building target lists","Market mapping"],               price_credits=12,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Public web data")),
+    models.Agent(id="a4",  name="Office Manager",         role="Office Manager",         is_official=True, skills=["Calendar Management","Email Triage","Meeting Scheduling","Task Coordination"],               use_cases=["Managing schedules","Coordinating team tasks","Email management","Internal communications"],         price_credits=8,   compliance=_make_compliance("Low","Gemini 2.5 Flash","Internal communications")),
+    models.Agent(id="a5",  name="Meeting Notetaker",      role="Meeting Analyst",        is_official=True, skills=["Real-time Transcription","Action Item Extraction","Meeting Summaries","Follow-up Drafting"],  use_cases=["Transcribing meetings via Speechmatics","Extracting action items","Briefing absent team members","Decision logging"], price_credits=6, compliance=_make_compliance("Low","Gemini 2.5 Flash + Speechmatics STT","Meeting audio & transcripts")),
+    models.Agent(id="a6",  name="Social Media Manager",   role="Social Media Specialist",is_official=True, skills=["Content Creation","Platform Strategy","Analytics","Trend Research"],                         use_cases=["Scheduling posts","Writing captions","Analyzing engagement","Campaign planning"],                    price_credits=10,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Public social content")),
+    models.Agent(id="a7",  name="SEO Specialist",         role="SEO Expert",             is_official=True, skills=["Keyword Research","On-page SEO","Backlink Analysis","Content Optimization"],                 use_cases=["Auditing websites","Keyword research reports","SEO-optimized content","Competitor analysis"],         price_credits=12,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Public web data")),
+    models.Agent(id="a8",  name="Contract Reviewer",      role="Legal Analyst",          is_official=True, skills=["Contract Analysis","Risk Assessment","Legal Terminology","GDPR Compliance"],                 use_cases=["Reviewing supplier contracts","Identifying legal risks","GDPR checks","NDA analysis"],               price_credits=15,  compliance=_make_compliance("Medium","Gemini 2.5 Flash","Legal documents (confidential)")),
+    models.Agent(id="a9",  name="Financial Analyst",      role="Finance Expert",         is_official=True, skills=["Financial Modeling","Budget Analysis","Cash Flow Forecasting","KPI Tracking"],               use_cases=["Analyzing P&L statements","Budget planning","Financial reporting","Scenario modeling"],              price_credits=18,  compliance=_make_compliance("Medium","Gemini 2.5 Flash","Financial records (confidential)")),
+    models.Agent(id="a10", name="Customer Support Pro",   role="Customer Support Agent", is_official=True, skills=["Ticket Management","Empathetic Communication","FAQ Generation","Escalation Routing"],        use_cases=["Handling support tickets","Writing FAQ docs","Customer onboarding","Churn prevention"],              price_credits=8,   compliance=_make_compliance("Low","Gemini 2.5 Flash","Customer communications")),
+    models.Agent(id="a11", name="HR Assistant",           role="HR Specialist",          is_official=True, skills=["Candidate Screening","Onboarding","Policy Drafting","Performance Reviews"],                  use_cases=["Screening CVs","Drafting job postings","Creating onboarding docs","Employee comms"],                 price_credits=10,  compliance=_make_compliance("Low","Gemini 2.5 Flash","HR documents (anonymized)")),
+    models.Agent(id="a12", name="Email Marketing Pro",    role="Email Marketing Expert", is_official=True, skills=["Campaign Strategy","Copywriting","A/B Testing","List Segmentation"],                        use_cases=["Writing email sequences","Designing campaigns","Analyzing open rates","Newsletter writing"],          price_credits=10,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Marketing content")),
+    models.Agent(id="a13", name="Data Analyst",           role="Data Analyst",           is_official=True, skills=["Data Visualization","Statistical Analysis","Report Generation","Insight Extraction"],         use_cases=["Analyzing sales data","Creating dashboards","Writing data reports","Trend identification"],           price_credits=14,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Business data (aggregated)")),
+    models.Agent(id="a14", name="Content Strategist",     role="Content Strategist",     is_official=True, skills=["Content Planning","Brand Voice","Editorial Calendar","SEO Blogging"],                        use_cases=["Creating content calendars","Blog post outlines","Brand guidelines","Thought leadership"],           price_credits=10,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Marketing content")),
+    models.Agent(id="a15", name="Project Manager",        role="Project Manager",        is_official=True, skills=["Timeline Planning","Risk Management","Stakeholder Communication","Agile Methods"],           use_cases=["Creating project plans","Managing timelines","Writing status reports","Risk registers"],            price_credits=15,  compliance=_make_compliance("Low","Gemini 2.5 Flash","Project documents")),
+]
+
+async def _create_notification(user_email: str, notif_type: str, message: str):
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_email": user_email,
+        "type": notif_type,
+        "message": message,
+        "read": False,
+        "created_at": datetime.utcnow().isoformat(),
+    })
+
+async def _auto_hire_agent(agent_id: str, user_email: str):
+    target = await db.marketplace_agents.find_one({"id": agent_id})
+    if not target:
+        return None
+    existing = await db.user_agents.find_one({"id": agent_id, "user_email": user_email})
+    if not existing:
+        hired = dict(target)
+        hired["is_hired"] = True
+        hired["probation_mode"] = True
+        hired["user_email"] = user_email
+        hired["dossier"] = []
+        hired["hired_at"] = datetime.utcnow().isoformat()
+        del hired["_id"]
+        await db.user_agents.insert_one(hired)
+    return target

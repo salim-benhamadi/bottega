@@ -4,65 +4,131 @@
 @layer base {
   body {
     font-family: 'Inter', sans-serif;
-    background-color: #FFFFFF;
+    background-color: #f8fafc;
     color: #0F172A;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-
-  h1, h2, h3, .font-display {
-    font-family: 'Outfit', sans-serif;
-  }
+  h1, h2, h3, .font-display { font-family: 'Outfit', sans-serif; }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #10b981; }
 
-/* Animations */
+/* ─── Animations ─── */
 .animate-fade-in-up {
-  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-
+.animate-slide-in {
+  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+.delay-100 { animation-delay: 75ms; }
+.delay-200 { animation-delay: 150ms; }
+.delay-300 { animation-delay: 225ms; }
 .animate-float { animation: float 6s ease-in-out infinite; }
 .animate-float-delayed { animation: float 6s ease-in-out 3s infinite; }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 @keyframes float {
-  0%   { transform: translateY(0px); }
-  50%  { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-14px); }
 }
 
-.neo-shadow {
-  box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.15), 0 0 20px rgba(16, 185, 129, 0.05);
+/* ─── Bar shimmer ─── */
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
+}
+.bar-shimmer {
+  background: linear-gradient(90deg, #10b981, #14b8a6, #10b981);
+  background-size: 200% auto;
+  animation: shimmer 2s linear infinite;
 }
 
+/* ─── Card system ─── */
+.card {
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(16,185,129,0.1), 0 2px 6px rgba(0,0,0,0.05);
+  border-color: rgba(16,185,129,0.2);
+}
+.card-accent::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, #14b8a6);
+  border-radius: 1rem 1rem 0 0;
+  margin: -1px -1px 0 -1px;
+}
+
+/* ─── Neo card (alias) ─── */
 .neo-card {
-  background: #FFFFFF;
-  border-radius: 2rem;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-
 .neo-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.1), 0 10px 10px -5px rgba(16, 185, 129, 0.04);
-  border-color: rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(16,185,129,0.1), 0 2px 6px rgba(0,0,0,0.05);
+  border-color: rgba(16,185,129,0.2);
 }
 
+/* ─── Neo shadow ─── */
+.neo-shadow {
+  box-shadow: 0 4px 20px -4px rgba(16,185,129,0.12), 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ─── Glow ─── */
+.glow-sm { box-shadow: 0 0 0 1px rgba(16,185,129,0.12), 0 4px 12px rgba(16,185,129,0.18); }
+
+/* ─── Modal backdrop ─── */
 .modal-backdrop {
   backdrop-filter: blur(8px);
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.6);
 }
+
+/* ─── Dot grid (kept for compat) ─── */
+.dot-grid {
+  background-color: #f8fafc;
+}
+
+/* ─── Accent line on top of cards ─── */
+.accent-top {
+  position: relative;
+}
+.accent-top::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #10b981, #14b8a6, transparent);
+  border-radius: 1rem 1rem 0 0;
+  pointer-events: none;
+}
+
+/* ─── Pulse animation ─── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.2); }
+}
+.pulse-dot { animation: pulseDot 2s ease-in-out infinite; }

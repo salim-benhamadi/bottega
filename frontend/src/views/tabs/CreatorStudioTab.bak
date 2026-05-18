@@ -1,0 +1,103 @@
+import React from 'react';
+
+export default function CreatorStudioTab({
+  creatorStats,
+  creatorForm,
+  setCreatorForm,
+  handleCreateAgent
+}) {
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="mb-12">
+        <h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Creator Studio</h1>
+        <p className="text-slate-500 font-medium text-lg">Design specialized agents and earn royalties on the marketplace.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-1 space-y-6">
+          {/* Creator earnings */}
+          {creatorStats && (
+            <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] p-8 border border-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+              <div className="absolute -top-32 -right-32 w-64 h-64 bg-emerald-400/10 rounded-full blur-[60px] z-0 pointer-events-none transition-transform duration-1000 group-hover:scale-110"></div>
+              <div className="relative z-10">
+                <h3 className="text-2xl font-display font-bold text-slate-900 mb-6 tracking-tight">Your Earnings</h3>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-emerald-50/50 rounded-3xl p-5 text-center border border-emerald-100/50 backdrop-blur-sm">
+                    <div className="text-3xl font-display font-extrabold text-emerald-600">{creatorStats.total_hires}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Total Hires</div>
+                  </div>
+                  <div className="bg-emerald-50/50 rounded-3xl p-5 text-center border border-emerald-100/50 backdrop-blur-sm">
+                    <div className="text-3xl font-display font-extrabold text-emerald-600">{creatorStats.total_earnings_credits}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">Credits Earned</div>
+                  </div>
+                </div>
+                <div className="space-y-3 mb-6">
+                  {[
+                    ['Revenue share', '15% per hire'],
+                    ['Payout cycle', 'Monthly'],
+                    ['Min payout', '€10 credits']
+                  ].map(([l, v]) => (
+                    <div key={l} className="flex justify-between items-center py-2 border-b border-slate-100/50">
+                      <span className="text-sm text-slate-500 font-medium">{l}</span>
+                      <span className="text-sm font-bold text-emerald-600">{v}</span>
+                    </div>
+                  ))}
+                </div>
+                {creatorStats.published_agents?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Your Published Agents</p>
+                    {creatorStats.published_agents.map(a => (
+                      <div key={a.id} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                        <div>
+                          <p className="text-slate-900 text-sm font-bold">{a.name}</p>
+                          <p className="text-slate-400 text-xs mt-0.5">{a.hire_count || 0} hires · {a.price_credits} cr/mo</p>
+                        </div>
+                        <span className="text-[10px] bg-emerald-100/50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-200/50 font-bold uppercase tracking-widest">Live</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-2 bg-white/80 backdrop-blur-xl rounded-[3rem] p-12 border border-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden group">
+          <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-indigo-400/5 rounded-full blur-[80px] z-0 pointer-events-none transition-transform duration-1000 group-hover:scale-110"></div>
+          
+          <div className="relative z-10">
+            <h3 className="text-3xl font-display font-bold text-slate-900 mb-8 tracking-tight">Publish a New Agent</h3>
+            <form onSubmit={handleCreateAgent} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">Agent Name</label>
+                  <input required className="w-full bg-slate-50/50 border border-slate-200 p-5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-slate-900" value={creatorForm.name} onChange={e=>setCreatorForm({...creatorForm,name:e.target.value})} placeholder="e.g. SEO Auditor Pro"/>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">Role</label>
+                  <input required className="w-full bg-slate-50/50 border border-slate-200 p-5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-slate-900" value={creatorForm.role} onChange={e=>setCreatorForm({...creatorForm,role:e.target.value})} placeholder="e.g. SEO Specialist"/>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-3">Skills <span className="text-slate-400 font-normal">(comma separated)</span></label>
+                <input required className="w-full bg-slate-50/50 border border-slate-200 p-5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-slate-900" value={creatorForm.skills} onChange={e=>setCreatorForm({...creatorForm,skills:e.target.value})} placeholder="Keyword Research, Analytics"/>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-3">Use Cases <span className="text-slate-400 font-normal">(comma separated)</span></label>
+                <input required className="w-full bg-slate-50/50 border border-slate-200 p-5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-slate-900" value={creatorForm.use_cases} onChange={e=>setCreatorForm({...creatorForm,use_cases:e.target.value})} placeholder="Auditing websites, Writing SEO content"/>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-3">Monthly Price <span className="text-slate-400 font-normal">(Credits)</span></label>
+                <input required type="number" min="1" className="w-full bg-slate-50/50 border border-slate-200 p-5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-slate-900 text-xl" value={creatorForm.price_credits} onChange={e=>setCreatorForm({...creatorForm,price_credits:e.target.value})} placeholder="25"/>
+              </div>
+              <button className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-500/20 active:scale-95 transition-all text-lg mt-4 flex items-center justify-center gap-2" type="submit">
+                Publish to Marketplace 
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

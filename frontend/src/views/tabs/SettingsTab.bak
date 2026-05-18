@@ -1,0 +1,99 @@
+import React from 'react';
+
+export default function SettingsTab({
+  userInfo,
+  settingsForm,
+  setSettingsForm,
+  passwordForm,
+  setPasswordForm,
+  settingsMsg,
+  topupAmount,
+  setTopupAmount,
+  showDeleteConfirm,
+  setShowDeleteConfirm,
+  handleSaveProfile,
+  handleTopup,
+  handleChangePassword,
+  handleDeleteAccount
+}) {
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="mb-12">
+        <h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Account Settings</h1>
+        <p className="text-slate-500 font-medium text-lg font-display">Manage your organization profile, credits ledger, and authentication nodes.</p>
+      </div>
+      {settingsMsg && (
+        <div className={`mb-6 px-5 py-4 rounded-2xl text-sm font-semibold border ${settingsMsg.includes('incorrect') || settingsMsg.includes('match') ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100 animate-fade-in-up'}`}>
+          {settingsMsg}
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {/* Profile */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">
+          <h3 className="text-xl font-display font-bold text-slate-900 mb-6">Organization Profile</h3>
+          <form onSubmit={handleSaveProfile} className="space-y-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5">Email Address</label>
+              <input disabled className="w-full bg-slate-100/80 border border-slate-200 p-4.5 rounded-2xl font-semibold text-slate-500 cursor-not-allowed text-sm" value={userInfo?.email || ''} />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2.5">Company Name</label>
+              <input className="w-full bg-slate-50 border border-slate-200 p-4.5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-slate-900 text-sm" value={settingsForm.company_name} onChange={e=>setSettingsForm({...settingsForm,company_name:e.target.value})} />
+            </div>
+            <button type="submit" className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-emerald-500 hover:shadow-lg active:scale-95 transition-all text-sm">Save Profiles</button>
+          </form>
+        </div>
+
+        {/* Credits */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">
+          <h3 className="text-xl font-display font-bold text-slate-900 mb-2">Swarm Credit Balance</h3>
+          <p className="text-slate-500 text-sm mb-6 font-medium">Available computation and hiring reserves: <span className="text-emerald-600 font-extrabold text-2xl font-display ml-1">{userInfo?.credit_balance ?? '—'}</span> credits</p>
+          <div className="flex items-center gap-4">
+            <select className="bg-slate-50 border border-slate-200 px-5 py-3.5 rounded-2xl font-bold text-slate-700 outline-none focus:bg-white focus:border-emerald-500 transition-all cursor-pointer text-sm" value={topupAmount} onChange={e=>setTopupAmount(Number(e.target.value))}>
+              {[25, 50, 100, 200, 500].map(v => <option key={v} value={v}>+{v} credits</option>)}
+            </select>
+            <button onClick={handleTopup} className="bg-emerald-500 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-emerald-400 active:scale-95 transition-all text-sm shadow-[0_8px_16px_-6px_rgba(16,185,129,0.4)]">Top Up Balance</button>
+          </div>
+        </div>
+
+        {/* Change password */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">
+          <h3 className="text-xl font-display font-bold text-slate-900 mb-6">Security & Authentication</h3>
+          <form onSubmit={handleChangePassword} className="space-y-5">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2.5">Current Password</label>
+              <input type="password" className="w-full bg-slate-50 border border-slate-200 p-4.5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-slate-900 placeholder-slate-400 text-sm" value={passwordForm.current_password} onChange={e=>setPasswordForm({...passwordForm,current_password:e.target.value})} placeholder="••••••••" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2.5">New Password</label>
+              <input type="password" className="w-full bg-slate-50 border border-slate-200 p-4.5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-slate-900 placeholder-slate-400 text-sm" value={passwordForm.new_password} onChange={e=>setPasswordForm({...passwordForm,new_password:e.target.value})} placeholder="••••••••" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2.5">Confirm New Password</label>
+              <input type="password" className="w-full bg-slate-50 border border-slate-200 p-4.5 rounded-2xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-semibold text-slate-900 placeholder-slate-400 text-sm" value={passwordForm.confirm} onChange={e=>setPasswordForm({...passwordForm,confirm:e.target.value})} placeholder="••••••••" />
+            </div>
+            <button type="submit" className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-emerald-500 transition-all text-sm shadow-md">Update Credentials</button>
+          </form>
+        </div>
+
+        {/* Danger zone */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-rose-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">
+          <h3 className="text-xl font-display font-bold text-rose-600 mb-2">Danger Zone</h3>
+          <p className="text-slate-500 text-sm mb-6 font-medium">Permanently purge your organization profile, active agent hires, swarm histories, and all compiled Dossier memory nodes. This action cannot be reversed.</p>
+          {!showDeleteConfirm ? (
+            <button onClick={() => setShowDeleteConfirm(true)} className="bg-rose-50 text-rose-600 border border-rose-200/50 px-8 py-3.5 rounded-2xl font-bold hover:bg-rose-500 hover:text-white hover:border-transparent active:scale-95 transition-all text-sm">Delete Dashboard Node</button>
+          ) : (
+            <div className="bg-rose-50/50 border border-rose-200/50 rounded-2xl p-6">
+              <p className="text-rose-700 font-extrabold text-sm mb-4">Are you absolutely sure? This will delete all active operational nodes.</p>
+              <div className="flex gap-3">
+                <button onClick={handleDeleteAccount} className="bg-rose-500 text-white px-6 py-3 rounded-2xl font-bold hover:bg-rose-600 transition-all text-sm">Yes, delete everything</button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="bg-white text-slate-600 border border-slate-200 px-6 py-3 rounded-2xl font-bold hover:border-slate-350 transition-all text-sm">Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
