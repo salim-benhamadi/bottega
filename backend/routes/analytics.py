@@ -19,12 +19,21 @@ async def get_analytics(current_user: str = Depends(auth.get_current_user)):
     agents = await db.user_agents.find({"user_email": current_user}).to_list(1000)
     active_agents = len(agents)
 
-    # Credits spent on hires (sum of price_credits for all hired agents)
-    credits_spent_on_hires = sum(a.get("price_credits", 0) for a in agents)
-
     # Totals
     total_tasks = len(tasks)
     delegation_count = sum(1 for t in tasks if t.get("delegated"))
+
+    # Manager approval rate (tasks that required approval)
+    approval_needed = [t for t in tasks if t.get("approved") or t.get("pending_approval")]
+    approved_count  = sum(1 for t in approval_needed if t.get("approved"))
+    approval_rate   = round((approved_count / len(approval_needed)) * 100) if approval_needed else None
+
+    # Estimated hours saved (15 min avg per task)
+    hours_saved = round(total_tasks * 0.25, 1)
+
+    # Cost per completed workflow (credits spent on hires / tasks done)
+    credits_spent_on_hires_val = sum(a.get("price_credits", 0) for a in agents)
+    cost_per_workflow = round(credits_spent_on_hires_val / total_tasks, 1) if total_tasks > 0 else None
 
     # Tasks per agent
     agent_counts: dict = {}
@@ -59,9 +68,12 @@ async def get_analytics(current_user: str = Depends(auth.get_current_user)):
         "active_agents": active_agents,
         "delegation_count": delegation_count,
         "credit_balance": credit_balance,
-        "credits_spent_on_hires": credits_spent_on_hires,
+        "credits_spent_on_hires": credits_spent_on_hires_val,
         "tasks_per_week": tasks_per_week,
         "tasks_per_agent": tasks_per_agent,
+        "approval_rate": approval_rate,
+        "hours_saved": hours_saved,
+        "cost_per_workflow": cost_per_workflow,
     }
 
 

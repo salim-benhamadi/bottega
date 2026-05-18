@@ -17,7 +17,7 @@ export default function AnalyticsTab({ analytics, token, logout, apiUrl }) {
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Stat cards */}
+          {/* Primary stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { label: 'Total Tasks', value: analytics.total_tasks, sub: 'operational logs', accent: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
@@ -31,6 +31,82 @@ export default function AnalyticsTab({ analytics, token, logout, apiUrl }) {
                 <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">{sub}</div>
               </div>
             ))}
+          </div>
+
+          {/* Derived efficiency metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Hours saved */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 relative overflow-hidden hover:-translate-y-0.5 transition-all duration-200">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-500 to-transparent" />
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-9 h-9 bg-teal-50 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">~15 min / task</span>
+              </div>
+              <div className="text-3xl font-display font-extrabold text-teal-600 mb-0.5">{analytics.hours_saved}h</div>
+              <div className="text-xs font-bold text-slate-700 uppercase tracking-widest">Estimated Hours Saved</div>
+              <div className="text-[10px] text-slate-400 font-medium mt-1">Based on {analytics.total_tasks} tasks completed by your agents</div>
+            </div>
+
+            {/* Manager approval rate */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 relative overflow-hidden hover:-translate-y-0.5 transition-all duration-200">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-transparent" />
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">probation tasks</span>
+              </div>
+              {analytics.approval_rate === null ? (
+                <>
+                  <div className="text-3xl font-display font-extrabold text-slate-300 mb-0.5">—</div>
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-widest">Manager Approval Rate</div>
+                  <div className="text-[10px] text-slate-400 font-medium mt-1">No probation tasks yet</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl font-display font-extrabold text-emerald-600 mb-0.5">{analytics.approval_rate}%</div>
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-widest">Manager Approval Rate</div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+                      style={{ width: `${analytics.approval_rate}%` }}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Cost per completed workflow */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 relative overflow-hidden hover:-translate-y-0.5 transition-all duration-200">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-transparent" />
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">credits / task</span>
+              </div>
+              {analytics.cost_per_workflow === null ? (
+                <>
+                  <div className="text-3xl font-display font-extrabold text-slate-300 mb-0.5">—</div>
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-widest">Cost per Workflow</div>
+                  <div className="text-[10px] text-slate-400 font-medium mt-1">Run your first task to see this</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl font-display font-extrabold text-amber-600 mb-0.5">{analytics.cost_per_workflow} cr</div>
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-widest">Cost per Workflow</div>
+                  <div className="text-[10px] text-slate-400 font-medium mt-1">{analytics.credits_spent_on_hires} cr in hires ÷ {analytics.total_tasks} tasks</div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Weekly activity chart */}
