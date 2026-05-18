@@ -1,16 +1,58 @@
 import React from 'react';
 
 export default function Logo({ size = "normal", dark = false }) {
-  const iconClass = size === "small" ? "w-6 h-6 rounded-lg" : "w-8 h-8 rounded-xl";
+  const px        = size === "small" ? 24 : 32;
+  const rx        = size === "small" ? 7  : 9;
   const textClass = size === "small" ? "text-xl" : "text-2xl";
-  const dotSize   = size === "small" ? "w-1.5 h-1.5" : "w-2.5 h-2.5";
+
   return (
-    <div className={`flex items-center gap-2 font-display font-extrabold tracking-tight ${dark ? 'text-white' : 'text-slate-900'} ${textClass}`}>
-      <div className={`flex items-center justify-center bg-slate-900 relative overflow-hidden shadow-md ${iconClass}`}>
-        <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-emerald-500 rounded-bl-full" />
-        <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-teal-400 rounded-tr-full" />
-        <div className={`absolute bg-lime-300 rounded-full shadow-sm z-10 ${dotSize}`} />
-      </div>
+    <div className={`flex items-center gap-2.5 font-display font-extrabold tracking-tight select-none ${dark ? 'text-white' : 'text-slate-900'} ${textClass}`}>
+      <svg
+        width={px} height={px}
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ flexShrink: 0, borderRadius: rx, overflow: 'hidden', display: 'block' }}
+      >
+        <defs>
+          <linearGradient id="logo-bg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#1e293b" />
+            <stop offset="100%" stopColor="#0f172a" />
+          </linearGradient>
+
+          <radialGradient id="logo-arcA" cx="28" cy="4" r="22" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#34d399" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.7" />
+          </radialGradient>
+
+          <radialGradient id="logo-arcB" cx="4" cy="28" r="22" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#2dd4bf" />
+            <stop offset="100%" stopColor="#0d9488" stopOpacity="0.7" />
+          </radialGradient>
+
+          <radialGradient id="logo-bloom" cx="16" cy="16" r="7" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#d9f99d" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#a3e635" stopOpacity="0"   />
+          </radialGradient>
+
+          <linearGradient id="logo-sheen" x1="0" y1="0" x2="16" y2="16" gradientUnits="userSpaceOnUse">
+            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.10" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0"    />
+          </linearGradient>
+        </defs>
+
+        <rect width="32" height="32" fill="url(#logo-bg)" />
+
+        <path d="M 32 0 L 32 20 Q 32 32 20 32 L 32 32 Z" fill="url(#logo-arcA)" opacity="0.9" />
+        <path d="M 0 32 L 12 32 Q 0 32 0 20 L 0 32 Z"   fill="url(#logo-arcB)" opacity="0.9" />
+
+        <circle cx="16" cy="16" r="7"   fill="url(#logo-bloom)" />
+        <circle cx="16" cy="16" r="2.6" fill="#bef264" />
+        <circle cx="16" cy="16" r="1.4" fill="#ecfccb" />
+
+        <rect width="32" height="32" fill="url(#logo-sheen)" />
+      </svg>
+
       bottega
     </div>
   );
