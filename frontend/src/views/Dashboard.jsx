@@ -301,10 +301,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* ── Sidebar ── */}
-      <aside className="w-72 bg-slate-900 flex flex-col pt-6 pb-4 relative z-20 overflow-hidden">
-        {/* Match login left-panel: emerald gradient + glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 to-slate-900 z-0 pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-emerald-500/20 rounded-full blur-[80px] z-0 pointer-events-none" />
+      <aside className="w-72 flex flex-col pt-6 pb-4 relative z-20" style={{ background: 'radial-gradient(ellipse 120% 60% at 0% 100%, rgba(16,185,129,0.18) 0%, transparent 70%), linear-gradient(155deg, rgba(16,185,129,0.07) 0%, #0f172a 40%), #0f172a' }}>
 
         {/* Logo */}
         <div className="px-6 mb-7 relative z-10 flex items-center justify-between">
@@ -325,7 +322,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-slate-900">{unreadCount > 9 ? '9+' : unreadCount}</span>}
             </button>
             {showNotifications && (
-              <div className="absolute left-0 top-12 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-fade-in-up">
+              <div className="fixed top-4 right-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-fade-in-up">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
                   <p className="font-bold text-slate-800 text-sm">Notifications</p>
                   <button onClick={markAllRead} className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Mark all read</button>
