@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AgentAvatar from '../../components/AgentAvatar';
+import BrandIcon from '../../components/BrandIcon';
+import { CONNECTORS } from './ConnectorsTab';
 
 // Parse the structured A2A result text produced by tasks.py
 function parseA2AResult(text) {
@@ -425,8 +427,11 @@ export default function TeamTab({
   handleEscalationResolve,
   orgStructure = {},
   saveOrgStructure,
+  userConnectors = [],
+  updateAgentTools,
 }) {
   const [viewMode, setViewMode] = useState('grid');
+  const [toolsOpenFor, setToolsOpenFor] = useState(null);
 
   return (
     <div>
@@ -634,6 +639,62 @@ export default function TeamTab({
                         <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed p-4 max-h-56 overflow-y-auto">{result.result}</p>
                       </div>
                     )
+                )}
+
+                {/* Tool assignment */}
+                {userConnectors.length > 0 && (
+                  <div className="mb-3">
+                    <button
+                      onClick={() => setToolsOpenFor(prev => prev === agent.id ? null : agent.id)}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40 transition-all group">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span className="text-xs font-bold text-slate-600 group-hover:text-emerald-700 transition-colors">Allowed Tools</span>
+                        {(agent.allowed_tools || []).length > 0 && (
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                            {(agent.allowed_tools || []).length} active
+                          </span>
+                        )}
+                      </div>
+                      <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${toolsOpenFor === agent.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+
+                    {toolsOpenFor === agent.id && (
+                      <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">Toggle access to connected tools</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {userConnectors.map(uc => {
+                            const connDef = CONNECTORS.find(c => c.id === uc.connector_id);
+                            if (!connDef) return null;
+                            const isEnabled = (agent.allowed_tools || []).includes(uc.connector_id);
+                            return (
+                              <button
+                                key={uc.connector_id}
+                                onClick={() => {
+                                  const current = agent.allowed_tools || [];
+                                  const updated = isEnabled
+                                    ? current.filter(t => t !== uc.connector_id)
+                                    : [...current, uc.connector_id];
+                                  updateAgentTools?.(agent.id, updated);
+                                }}
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
+                                  isEnabled
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                                }`}>
+                                <BrandIcon connectorId={uc.connector_id} name={connDef.name} size={14} />
+                                {connDef.name}
+                                {isEnabled && <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {userConnectors.length === 0 && (
+                          <p className="text-xs text-slate-400 font-medium">No connectors set up yet. Go to the Connectors page to add integrations.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <button

@@ -72,6 +72,16 @@ async def end_probation(agent_id: str, current_user: str = Depends(auth.get_curr
     return {"status": "success"}
 
 
+@router.put("/team/{agent_id}/tools")
+async def update_agent_tools(agent_id: str, payload: dict, current_user: str = Depends(auth.get_current_user)):
+    allowed_tools = payload.get("allowed_tools", [])
+    await db.user_agents.update_one(
+        {"id": agent_id, "user_email": current_user},
+        {"$set": {"allowed_tools": allowed_tools}},
+    )
+    return {"status": "updated", "allowed_tools": allowed_tools}
+
+
 @router.get("/team/structure")
 async def get_structure(current_user: str = Depends(auth.get_current_user)):
     doc = await db.team_structure.find_one({"user_email": current_user})

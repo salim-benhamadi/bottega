@@ -12,7 +12,8 @@ import {
   BellIcon,
   HistoryIcon,
   GearIcon,
-  ChartIcon
+  ChartIcon,
+  LinkIcon,
 } from '../components/Icons';
 import NavButton from '../components/NavButton';
 import Logo from '../components/Logo';
@@ -28,6 +29,7 @@ import TaskHistoryTab from './tabs/TaskHistoryTab';
 import AnalyticsTab from './tabs/AnalyticsTab';
 import MarketplaceTab from './tabs/MarketplaceTab';
 import CreatorStudioTab from './tabs/CreatorStudioTab';
+import ConnectorsTab from './tabs/ConnectorsTab';
 import SettingsTab from './tabs/SettingsTab';
 import PerformanceReviewTab from './tabs/PerformanceReviewTab';
 
@@ -50,6 +52,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
   const [bundles, setBundles] = useState([]);
   const [orgStructure, setOrgStructure] = useState({});
   const [creatorStats, setCreatorStats] = useState(null);
+  const [userConnectors, setUserConnectors] = useState([]);
 
   // History filters
   const [historySearch, setHistorySearch] = useState('');
@@ -141,6 +144,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     if (activeTab === 'history') fetchWithAuth('/tasks/history').then(data => { if (Array.isArray(data)) setTaskHistory(data); });
     if (activeTab === 'analytics') { setAnalytics(null); fetchWithAuth('/analytics').then(setAnalytics); }
     if (activeTab === 'creator') fetchWithAuth('/creator/stats').then(setCreatorStats);
+    if (activeTab === 'connectors') fetchWithAuth('/connectors').then(data => { if (Array.isArray(data)) setUserConnectors(data); });
     if (activeTab === 'settings' && userInfo) setSettingsForm({ company_name: userInfo.company_name || '' });
     if (activeTab === 'settings') fetchWithAuth('/credits/history').then(data => { if (Array.isArray(data)) setCreditHistory(data); });
     if (activeTab === 'tutorial') {} // no fetch needed
@@ -271,6 +275,31 @@ export default function Dashboard({ token, setToken, apiUrl }) {
     showToast('Entry updated.');
   };
 
+  const handleConnectConnector = async (connectorId, credentials) => {
+    await fetchWithAuth(`/connectors/${connectorId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credentials }),
+    });
+    fetchWithAuth('/connectors').then(data => { if (Array.isArray(data)) setUserConnectors(data); });
+    showToast('Connector saved!');
+  };
+
+  const handleDisconnectConnector = async (connectorId) => {
+    await fetchWithAuth(`/connectors/${connectorId}`, { method: 'DELETE' });
+    setUserConnectors(prev => prev.filter(c => c.connector_id !== connectorId));
+    showToast('Connector removed.', 'error');
+  };
+
+  const handleUpdateAgentTools = async (agentId, allowedTools) => {
+    await fetchWithAuth(`/team/${agentId}/tools`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allowed_tools: allowedTools }),
+    });
+    setTeam(prev => prev.map(a => a.id === agentId ? { ...a, allowed_tools: allowedTools } : a));
+  };
+
   const handleCreateAgent = async (e) => {
     e.preventDefault();
     const payload = { name: creatorForm.name, role: creatorForm.role, skills: creatorForm.skills.split(',').map(s => s.trim()), use_cases: creatorForm.use_cases.split(',').map(s => s.trim()), price_credits: parseInt(creatorForm.price_credits) || 10 };
@@ -388,6 +417,12 @@ export default function Dashboard({ token, setToken, apiUrl }) {
           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5 pt-3">Ecosystem</p>
           <NavButton active={activeTab==='marketplace'} onClick={()=>setActiveTab('marketplace')} icon={<ShopIcon/>}>Marketplace</NavButton>
           <NavButton active={activeTab==='creator'} onClick={()=>setActiveTab('creator')} icon={<StarIcon/>}>Creator Studio</NavButton>
+          <NavButton active={activeTab==='connectors'} onClick={()=>setActiveTab('connectors')} icon={<LinkIcon/>}>
+            <span className="flex items-center gap-2">
+              Connectors
+              {userConnectors.length > 0 && <span className="text-[8px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded font-bold">{userConnectors.length}</span>}
+            </span>
+          </NavButton>
 
           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5 pt-3">Account</p>
           <NavButton active={activeTab==='settings'} onClick={()=>setActiveTab('settings')} icon={<GearIcon/>}>Settings</NavButton>
@@ -424,6 +459,8 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               handleEscalationResolve={handleEscalationResolve}
               orgStructure={orgStructure}
               saveOrgStructure={saveOrgStructure}
+              userConnectors={userConnectors}
+              updateAgentTools={handleUpdateAgentTools}
             />
           )}
 
@@ -475,6 +512,14 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               handleHire={handleHire}
               bundles={bundles}
               handleHireBundle={handleHireBundle}
+            />
+          )}
+
+          {activeTab === 'connectors' && (
+            <ConnectorsTab
+              connectors={userConnectors}
+              onConnect={handleConnectConnector}
+              onDisconnect={handleDisconnectConnector}
             />
           )}
 
