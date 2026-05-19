@@ -6,7 +6,11 @@ import Register from './views/Register';
 import Dashboard from './views/Dashboard';
 import Onboarding from './views/Onboarding';
 
-const API_URL = "http://localhost:8000/api";
+const API_URL = import.meta.env.VITE_API_URL || (
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000/api'
+    : (window.location.port ? `http://${window.location.hostname}:8000/api` : '/api')
+);
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
