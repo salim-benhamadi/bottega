@@ -15,7 +15,7 @@ const MODELS = [
   // Featherless (open-source)
   { id: 'meta-llama/Meta-Llama-3.1-8B-Instruct',   label: 'Llama 3.1 8B',  provider: 'featherless', badge: 'Free',    desc: 'Fast, lightweight open model' },
   { id: 'meta-llama/Meta-Llama-3.1-70B-Instruct',  label: 'Llama 3.1 70B', provider: 'featherless', badge: 'Strong',  desc: 'Powerful, open weights' },
-  { id: 'mistralai/Mixtral-8x7B-Instruct-v0.1',    label: 'Mixtral 8x7B',  provider: 'featherless', badge: 'MoE',     desc: 'Mixture of experts, high quality' },
+  { id: 'mistralai/Mistral-Small-3.1-24B-Instruct-2503', label: 'Mistral Small 24B', provider: 'featherless', badge: 'MoE',     desc: 'Powerful, efficient instruct model' },
   { id: 'Qwen/Qwen2.5-72B-Instruct',               label: 'Qwen 2.5 72B',  provider: 'featherless', badge: '',        desc: 'Strong multilingual model' },
   { id: 'mistralai/Mistral-7B-Instruct-v0.3',      label: 'Mistral 7B',    provider: 'featherless', badge: 'Lean',    desc: 'Efficient French open model' },
 ];
