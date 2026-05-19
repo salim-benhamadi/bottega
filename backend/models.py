@@ -79,6 +79,7 @@ class AgentCreate(BaseModel):
     skills: List[str]
     use_cases: List[str]
     price_credits: int
+    underlying_model: Optional[str] = "gemini-2.5-flash"
 
 class TranscribeResponse(BaseModel):
     result: str

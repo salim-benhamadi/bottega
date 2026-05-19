@@ -23,6 +23,7 @@ async def get_marketplace(current_user: str = Depends(auth.get_current_user)):
 
 @router.post("/marketplace", response_model=models.Agent)
 async def create_marketplace_agent(agent_in: models.AgentCreate, current_user: str = Depends(auth.get_current_user)):
+    model_id = agent_in.underlying_model or "gemini-2.5-flash"
     new_agent = models.Agent(
         id=f"c_{uuid.uuid4().hex[:8]}",
         name=agent_in.name, role=agent_in.role,
@@ -30,11 +31,13 @@ async def create_marketplace_agent(agent_in: models.AgentCreate, current_user: s
         price_credits=agent_in.price_credits,
         is_official=False, creator_email=current_user,
         compliance=models.AIActCompliance(
-            risk_level="Low", underlying_model="Gemini 2.5 Flash",
+            risk_level="Low", underlying_model=model_id,
             data_processed="User defined input", eu_data_residency=True, audit_log=True,
         ),
     )
-    await db.marketplace_agents.insert_one(new_agent.model_dump())
+    new_agent_doc = new_agent.model_dump()
+    new_agent_doc["underlying_model"] = model_id
+    await db.marketplace_agents.insert_one(new_agent_doc)
     return new_agent
 
 @router.post("/marketplace/{agent_id}/rate")

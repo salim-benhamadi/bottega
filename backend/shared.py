@@ -1,8 +1,10 @@
 import os
 import uuid
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 import models
 from database import db
 
@@ -10,7 +12,38 @@ load_dotenv()
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 SPEECHMATICS_API_KEY = os.environ.get("SPEECHMATICS_API_KEY")
+FEATHERLESS_KEY = os.environ.get("FEATHERLESS_KEY")
+FEATHERLESS_BASE = "https://api.featherless.ai/v1"
+
 genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+
+def call_model(model: str, user_prompt: str, system_prompt: str = "", temperature: float = 0.3) -> str:
+    """Route a generation call to Gemini or Featherless depending on the model name."""
+    model = model or "gemini-2.5-flash"
+    if model.startswith("gemini"):
+        if not genai_client:
+            raise RuntimeError("GEMINI_API_KEY not set")
+        cfg = types.GenerateContentConfig(temperature=temperature)
+        if system_prompt:
+            cfg = types.GenerateContentConfig(system_instruction=system_prompt, temperature=temperature)
+        resp = genai_client.models.generate_content(model=model, contents=user_prompt, config=cfg)
+        return resp.text.strip()
+    else:
+        if not FEATHERLESS_KEY:
+            raise RuntimeError("FEATHERLESS_KEY not set")
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": user_prompt})
+        resp = requests.post(
+            f"{FEATHERLESS_BASE}/chat/completions",
+            headers={"Authorization": f"Bearer {FEATHERLESS_KEY}", "Content-Type": "application/json"},
+            json={"model": model, "messages": messages, "temperature": temperature, "max_tokens": 2048},
+            timeout=120,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"].strip()
 
 DELEGATION_MAP = {
     "german_translation": "a2",

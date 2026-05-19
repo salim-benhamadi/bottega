@@ -39,7 +39,7 @@ function DelegationInFlight({ agentName }) {
   ];
 
   return (
-    <div className="mb-4 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50 overflow-hidden animate-fade-in-up">
+    <div className="mb-4 rounded-sm border border-indigo-200 bg-gradient-to-br from-indigo-50 to-purple-50 overflow-hidden animate-fade-in-up">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 border-b border-indigo-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -54,7 +54,7 @@ function DelegationInFlight({ agentName }) {
         <div className="flex items-center gap-3 mb-4">
           {/* Source node */}
           <div className="flex flex-col items-center gap-1 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 border-2 border-indigo-200 flex items-center justify-center font-bold text-sm text-indigo-700 a2a-pulse">
+            <div className="w-9 h-9 rounded-sm bg-indigo-100 border-2 border-indigo-200 flex items-center justify-center font-bold text-sm text-indigo-700 a2a-pulse">
               {agentName?.charAt(0) || '?'}
             </div>
             <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-widest max-w-[52px] text-center truncate">{agentName}</span>
@@ -75,7 +75,7 @@ function DelegationInFlight({ agentName }) {
 
           {/* Target node */}
           <div className="flex flex-col items-center gap-1 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-purple-100 border-2 border-purple-200 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-sm bg-purple-100 border-2 border-purple-200 flex items-center justify-center">
               <div className="w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
             </div>
             <span className="text-[9px] font-bold text-purple-500 uppercase tracking-widest">Specialist</span>
@@ -108,14 +108,14 @@ function A2APipelineResult({ parsed }) {
   const [showWork, setShowWork] = useState(false);
 
   return (
-    <div className="mb-4 rounded-2xl border border-indigo-200 overflow-hidden animate-fade-in-up">
+    <div className="mb-4 rounded-sm border border-indigo-200 overflow-hidden animate-fade-in-up">
       {/* Pipeline header banner */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-xs">{parsed.fromAgent?.charAt(0)}</div>
+          <div className="w-6 h-6 rounded-sm bg-white/20 flex items-center justify-center text-white font-bold text-xs">{parsed.fromAgent?.charAt(0)}</div>
           <span className="text-white text-xs font-bold">{parsed.fromAgent}</span>
           <svg className="w-3.5 h-3.5 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-          <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-xs">{parsed.toAgent?.charAt(0)}</div>
+          <div className="w-6 h-6 rounded-sm bg-white/20 flex items-center justify-center text-white font-bold text-xs">{parsed.toAgent?.charAt(0)}</div>
           <span className="text-white text-xs font-bold">{parsed.toAgent}</span>
         </div>
         <span className="bg-white/20 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest">A2A Pipeline</span>
@@ -164,7 +164,7 @@ function EscalationBanner({ escalation, taskId, agentId, onResolve, isLoading })
   if (!cfg) return null;
   const needsReply = escalation.type === 'ask_manager' || escalation.type === 'missing_context';
   return (
-    <div className={`mb-4 rounded-2xl border ${cfg.border} ${cfg.bg} overflow-hidden animate-fade-in-up`}>
+    <div className={`mb-4 rounded-sm border ${cfg.border} ${cfg.bg} overflow-hidden animate-fade-in-up`}>
       <div className={`px-4 pt-3.5 pb-3 border-b ${cfg.border} flex items-center gap-2`}>
         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
         <span className={`text-xs font-bold uppercase tracking-widest ${cfg.text}`}>{cfg.icon} {cfg.label}</span>
@@ -174,7 +174,7 @@ function EscalationBanner({ escalation, taskId, agentId, onResolve, isLoading })
         {needsReply && (
           <div className="flex gap-2">
             <input
-              className="flex-1 text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 font-medium placeholder-slate-400"
+              className="flex-1 text-sm bg-white border border-slate-200 rounded-sm px-3 py-2 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 font-medium placeholder-slate-400"
               placeholder={escalation.type === 'ask_manager' ? 'Your answer…' : 'Provide the missing context…'}
               value={reply}
               onChange={e => setReply(e.target.value)}
@@ -182,7 +182,7 @@ function EscalationBanner({ escalation, taskId, agentId, onResolve, isLoading })
             <button
               onClick={() => { if (reply.trim()) onResolve(agentId, taskId, reply); }}
               disabled={!reply.trim() || isLoading}
-              className="bg-slate-900 text-white rounded-xl px-4 py-2 text-xs font-bold hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-40 shrink-0"
+              className="bg-slate-900 text-white rounded-sm px-4 py-2 text-xs font-bold hover:bg-emerald-500 active:scale-95 transition-all disabled:opacity-40 shrink-0"
             >
               {isLoading ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Continue →'}
             </button>
@@ -310,13 +310,13 @@ function OrgChartView({ team, orgStructure, onSave }) {
   return (
     <div className="relative">
       {connectingFrom && connectingAgent && (
-        <div className="mb-3 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5 animate-fade-in-up">
+        <div className="mb-3 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-sm px-4 py-2.5 animate-fade-in-up">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <span className="text-sm font-semibold text-emerald-800">Connecting <span className="font-bold">{connectingAgent.name}</span> to… click another agent to set their manager.</span>
           <button onClick={() => setConnectingFrom(null)} className="ml-auto text-xs text-emerald-600 hover:text-emerald-800 font-bold transition-colors">Cancel</button>
         </div>
       )}
-      <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-50" style={{ minHeight: 280, position: 'relative' }}>
+      <div className="overflow-auto rounded-sm border border-slate-200 bg-slate-50" style={{ minHeight: 280, position: 'relative' }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.5 }} />
         <div style={{ position: 'relative', width: canvasW + 80, height: canvasH + 80, minWidth: '100%', minHeight: 280 }}>
           <svg style={{ position: 'absolute', top: 40, left: 40, width: canvasW, height: canvasH, pointerEvents: 'none', zIndex: 1 }} viewBox={`0 0 ${canvasW} ${canvasH}`}>
@@ -348,7 +348,7 @@ function OrgChartView({ team, orgStructure, onSave }) {
             return (
               <div key={agent.id} onClick={() => handleNodeClick(agent.id)}
                 style={{ position: 'absolute', left: pos.x + 40, top: pos.y + 40, width: NODE_W, zIndex: 2, cursor: connectingFrom ? 'pointer' : 'default' }}
-                className={`bg-white rounded-2xl shadow-sm border transition-all duration-200 select-none ${isConnecting ? 'border-emerald-400 ring-2 ring-emerald-300 scale-105' : isSelected ? 'border-indigo-300 ring-2 ring-indigo-200' : isConnectTarget ? 'border-dashed border-emerald-400 hover:border-emerald-500 hover:shadow-md' : 'border-slate-200 hover:border-slate-300 hover:shadow-md'}`}
+                className={`bg-white rounded-sm shadow-sm border transition-all duration-200 select-none ${isConnecting ? 'border-emerald-400 ring-2 ring-emerald-300 scale-105' : isSelected ? 'border-indigo-300 ring-2 ring-indigo-200' : isConnectTarget ? 'border-dashed border-emerald-400 hover:border-emerald-500 hover:shadow-md' : 'border-slate-200 hover:border-slate-300 hover:shadow-md'}`}
               >
                 <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-t-2xl" />
                 <div className="pt-4 pb-3 px-3 flex flex-col items-center">
@@ -363,8 +363,8 @@ function OrgChartView({ team, orgStructure, onSave }) {
                         ))}
                       </div>
                       <div className="flex gap-1">
-                        <input className="flex-1 text-[10px] border border-slate-200 rounded-lg px-1.5 py-0.5 outline-none focus:border-emerald-400" placeholder="Custom…" value={customTitleInput} onChange={e => setCustomTitleInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') setTitle(agent.id, customTitleInput); }} autoFocus />
-                        <button onClick={() => setTitle(agent.id, customTitleInput)} className="text-[9px] bg-emerald-500 text-white rounded-lg px-1.5 py-0.5 font-bold">OK</button>
+                        <input className="flex-1 text-[10px] border border-slate-200 rounded-sm px-1.5 py-0.5 outline-none focus:border-emerald-400" placeholder="Custom…" value={customTitleInput} onChange={e => setCustomTitleInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') setTitle(agent.id, customTitleInput); }} autoFocus />
+                        <button onClick={() => setTitle(agent.id, customTitleInput)} className="text-[9px] bg-emerald-500 text-white rounded-sm px-1.5 py-0.5 font-bold">OK</button>
                       </div>
                     </div>
                   ) : (
@@ -373,12 +373,12 @@ function OrgChartView({ team, orgStructure, onSave }) {
                     </button>
                   )}
                   <div className="flex items-center gap-1.5 w-full justify-center" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => setConnectingFrom(connectingFrom === agent.id ? null : agent.id)} title="Set manager" className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg transition-all ${connectingFrom === agent.id ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700'}`}>
+                    <button onClick={() => setConnectingFrom(connectingFrom === agent.id ? null : agent.id)} title="Set manager" className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-sm transition-all ${connectingFrom === agent.id ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500 hover:bg-emerald-100 hover:text-emerald-700'}`}>
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
                       Connect
                     </button>
                     {localStructure[agent.id]?.reportsTo && (
-                      <button onClick={() => handleDisconnect(agent.id)} title="Remove manager link" className="flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-lg bg-rose-50 text-rose-400 hover:bg-rose-100 hover:text-rose-600 transition-all">
+                      <button onClick={() => handleDisconnect(agent.id)} title="Remove manager link" className="flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-sm bg-rose-50 text-rose-400 hover:bg-rose-100 hover:text-rose-600 transition-all">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
                       </button>
                     )}
@@ -393,15 +393,15 @@ function OrgChartView({ team, orgStructure, onSave }) {
         <p className="text-center text-slate-400 text-xs font-medium mt-3">Connect agents by clicking the <span className="font-bold text-emerald-600">Connect</span> button on any card to set their manager.</p>
       )}
       {isDirty && (
-        <div className="mt-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 animate-fade-in-up">
+        <div className="mt-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-sm px-4 py-3 animate-fade-in-up">
           <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
           <span className="text-sm font-medium text-amber-800 flex-1">You have unsaved changes</span>
-          <button onClick={handleDiscard} className="text-xs text-amber-600 hover:text-amber-800 font-bold px-3 py-1.5 rounded-xl hover:bg-amber-100 transition-all">Discard</button>
-          <button onClick={handleSave} className="text-xs bg-amber-500 hover:bg-amber-400 text-white font-bold px-4 py-1.5 rounded-xl transition-all active:scale-95">Save Structure</button>
+          <button onClick={handleDiscard} className="text-xs text-amber-600 hover:text-amber-800 font-bold px-3 py-1.5 rounded-sm hover:bg-amber-100 transition-all">Discard</button>
+          <button onClick={handleSave} className="text-xs bg-amber-500 hover:bg-amber-400 text-white font-bold px-4 py-1.5 rounded-sm transition-all active:scale-95">Save Structure</button>
         </div>
       )}
       {saved && !isDirty && (
-        <div className="mt-4 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2.5 animate-fade-in-up">
+        <div className="mt-4 flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-sm px-4 py-2.5 animate-fade-in-up">
           <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
           <span className="text-sm font-semibold text-emerald-700">Saved</span>
         </div>
@@ -437,19 +437,19 @@ export default function TeamTab({
     <div>
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-1.5">Operations</p>
-          <h1 className="text-4xl font-display font-extrabold text-slate-900 mb-2">Your Team</h1>
-          <p className="text-slate-500 font-medium text-lg">Manage deployed agents and assign operational objectives.</p>
+          <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-2">Operations</p>
+          <h1 className="text-3xl font-bold text-slate-950 mb-2 tracking-tight">Your Team</h1>
+          <p className="text-slate-400 text-sm">Manage deployed agents and assign operational objectives.</p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex bg-slate-100 rounded-xl p-1">
-            <button onClick={() => setViewMode('grid')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>Grid</button>
-            <button onClick={() => setViewMode('org')}  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'org'  ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>Org Chart</button>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex border border-slate-200 p-0.5">
+            <button onClick={() => setViewMode('grid')} className={`px-3 py-1.5 text-xs font-medium transition-all ${viewMode === 'grid' ? 'bg-slate-950 text-white' : 'text-slate-400 hover:text-slate-700'}`}>Grid</button>
+            <button onClick={() => setViewMode('org')}  className={`px-3 py-1.5 text-xs font-medium transition-all ${viewMode === 'org'  ? 'bg-slate-950 text-white' : 'text-slate-400 hover:text-slate-700'}`}>Org Chart</button>
           </div>
           {team.length > 0 && (
             <button onClick={() => setActiveTab('marketplace')}
-              className="bg-emerald-500 text-white rounded-2xl px-6 py-3.5 font-bold hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95 transition-all flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+              className="bg-slate-950 text-white px-5 py-2.5 text-sm font-medium hover:bg-emerald-600 active:scale-95 transition-all flex items-center gap-2">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
               Hire Agent
             </button>
           )}
@@ -457,13 +457,13 @@ export default function TeamTab({
       </div>
 
       {team.length > 0 && (
-        <div className="flex items-center gap-4 mb-6 flex-wrap">
-          <span className="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-600">
+        <div className="flex items-center gap-2 mb-8 flex-wrap">
+          <span className="bg-slate-50 border border-slate-200 px-3 py-1.5 text-[10px] font-mono text-slate-600">
             {team.length} agent{team.length !== 1 ? 's' : ''}
           </span>
           {team.filter(a => a.probation_mode).length > 0 && (
-            <span className="bg-amber-50 border border-amber-100 rounded-xl px-3.5 py-2 text-xs font-bold text-amber-700">
-              {team.filter(a => a.probation_mode).length} in probation
+            <span className="bg-amber-50 border border-amber-200 px-3 py-1.5 text-[10px] font-mono text-amber-700">
+              {team.filter(a => a.probation_mode).length} on probation
             </span>
           )}
         </div>
@@ -473,11 +473,11 @@ export default function TeamTab({
       {viewMode === 'org' && (
         <div className="mb-6">
           {team.length === 0 ? (
-            <div className="py-20 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
-              <p className="text-slate-400 font-medium mb-5">Your team is empty. Hire specialized agents to get started.</p>
-              <button onClick={() => setActiveTab('marketplace')} className="bg-slate-900 text-white rounded-xl px-5 py-2.5 text-sm font-bold hover:bg-emerald-500 transition-all inline-flex items-center gap-2">
+            <div className="py-24 text-center border border-dashed border-slate-200 rounded-sm">
+              <p className="text-slate-400 text-sm mb-5">Your team is empty. Hire specialized agents to get started.</p>
+              <button onClick={() => setActiveTab('marketplace')} className="bg-slate-950 text-white rounded-sm px-5 py-2.5 text-sm font-medium hover:bg-emerald-500 transition-all inline-flex items-center gap-2">
                 Go to Marketplace
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
               </button>
             </div>
           ) : (
@@ -487,14 +487,14 @@ export default function TeamTab({
       )}
 
       {/* Grid view */}
-      {viewMode === 'grid' && <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {viewMode === 'grid' && <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
         {team.length === 0 && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
-            <p className="text-slate-400 font-medium mb-5">Your team is empty. Hire specialized agents to get started.</p>
+          <div className="col-span-full py-24 text-center border border-dashed border-slate-200 rounded-sm">
+            <p className="text-slate-400 text-sm mb-5">Your team is empty. Hire specialized agents to get started.</p>
             <button onClick={() => setActiveTab('marketplace')}
-              className="bg-slate-900 text-white rounded-xl px-5 py-2.5 text-sm font-bold hover:bg-emerald-500 transition-all inline-flex items-center gap-2">
+              className="bg-slate-950 text-white rounded-sm px-5 py-2.5 text-sm font-medium hover:bg-emerald-500 transition-all inline-flex items-center gap-2">
               Go to Marketplace
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
             </button>
           </div>
         )}
@@ -505,163 +505,194 @@ export default function TeamTab({
           const isDelegating = loadingTasks[agent.id];
           const justDelegated = result?.delegated && !isDelegating;
           const parsed = result?.result ? parseA2AResult(result.result) : null;
+          const isA2ACapable = agent.skills?.some(s => ['Copywriting','Sales','Proposal','Legal','Financial','SEO','German','Translation','Lead','Data','Content','Project','Meeting'].some(k => s.includes(k)));
+          const toolCount = (agent.allowed_tools || []).length;
+          const hasActivity = isDelegating || result;
 
           return (
-            <div key={agent.id} className={`bg-white rounded-2xl border shadow-sm flex flex-col relative overflow-hidden transition-all duration-300 ${
-              justDelegated
-                ? 'border-indigo-200 shadow-indigo-100/60 shadow-lg'
-                : `border-slate-100 hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200/50 ${agent.probation_mode && !justDelegated ? 'border-amber-200 shadow-amber-50' : ''}`
+            <div key={agent.id} className={`bg-white border flex flex-col overflow-hidden transition-all duration-200 ${
+              agent.probation_mode ? 'border-amber-200 shadow-sm hover:shadow-md' :
+              isDelegating        ? 'border-indigo-200 shadow-md' :
+                                    'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'
             }`}>
-              {/* Top accent line */}
-              <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r transition-all duration-500 ${
-                justDelegated ? 'from-indigo-500 via-purple-400 to-transparent' : 'from-emerald-500 via-teal-400 to-transparent'
-              }`} />
-              {isDelegating && <div className="absolute top-0.5 left-0 right-0 h-0.5 bar-shimmer" />}
 
-              <div className="p-6">
-                {/* Agent header */}
-                <div className="flex justify-between items-start mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className={`rounded-xl overflow-hidden transition-all duration-500 ${
-                      justDelegated ? 'ring-2 ring-indigo-400 scale-110 a2a-pulse'
-                      : isDelegating ? 'ring-2 ring-emerald-300 animate-pulse'
-                      : ''
-                    }`}>
-                      <AgentAvatar name={agent.name} role={agent.role} size={48} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-lg font-display font-bold text-slate-900">{agent.name}</h3>
-                        {justDelegated && (
-                          <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest animate-fade-in-up">
-                            A2A
-                          </span>
-                        )}
-                        {isDelegating && (
-                          <span className="bg-purple-50 text-purple-600 border border-purple-100 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest animate-pulse">
-                            Delegating…
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 font-medium">{agent.role}</p>
-                      {agent.skills?.some(s => ['Copywriting','Sales','Proposal','Legal','Financial','SEO','German','Translation','Lead','Data','Content','Project','Meeting'].some(k => s.includes(k))) && (
-                        <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">A2A capable</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    {agent.probation_mode ? (
-                      <div className="flex items-center gap-2">
-                        <span className="bg-amber-50 text-amber-700 border border-amber-100 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-widest">Probation</span>
-                        <button onClick={() => handleEndProbation(agent.id)} className="text-[10px] text-slate-400 hover:text-slate-600 font-bold uppercase tracking-wider transition-colors">End</button>
-                      </div>
-                    ) : (
-                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-widest">Autonomous</span>
+              {/* ── Running progress bar ── */}
+              <div className={`h-[2px] shrink-0 transition-all duration-500 ${isDelegating ? 'bar-shimmer' : 'bg-transparent'}`} />
+
+              {/* ── Header ── */}
+              <div className="flex items-center gap-3.5 px-5 pt-4 pb-4">
+
+                {/* Avatar + status dot */}
+                <div className="relative shrink-0">
+                  <AgentAvatar name={agent.name} role={agent.role} size={44} />
+                  <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
+                    isDelegating      ? 'bg-indigo-400 animate-pulse' :
+                    agent.probation_mode ? 'bg-amber-400' :
+                    justDelegated     ? 'bg-slate-400' :
+                                        'bg-emerald-400'
+                  }`} />
+                </div>
+
+                {/* Identity */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="text-[15px] font-semibold text-slate-900 leading-snug tracking-tight truncate">{agent.name}</h3>
+                    {justDelegated && !isDelegating && (
+                      <span className="text-[9px] font-bold bg-slate-900 text-white px-1.5 py-px uppercase tracking-widest shrink-0 animate-fade-in-up">A2A</span>
                     )}
-                    <div className="flex items-center gap-2">
-                      {isMeeting && <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest">Speechmatics</span>}
-                      <button onClick={() => handleFire(agent.id, agent.name)} className="text-xs text-rose-400 hover:text-rose-600 font-bold transition-colors">Fire</button>
-                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[12px] text-slate-400 truncate">{agent.role}</p>
+                    {isMeeting && <span className="text-[9px] font-medium text-slate-400 border border-slate-200 px-1.5 py-px shrink-0">STT</span>}
+                    {isA2ACapable && <span className="text-[9px] text-indigo-300 border border-indigo-100 px-1.5 py-px shrink-0 font-medium">A2A</span>}
                   </div>
                 </div>
 
-                {/* Pending approval banner */}
-                {result?.pending_approval && (
-                  <div className="mb-4 p-4 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-amber-700 text-xs font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 pulse-dot" />
-                        Pending Approval
-                      </p>
-                      <p className="text-amber-600 text-xs font-medium">Verify before committing to Dossier memory.</p>
+                {/* Status + dismiss */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {isDelegating ? (
+                    <span className="flex items-center gap-1.5 text-[11px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />Running
+                    </span>
+                  ) : agent.probation_mode ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 uppercase tracking-wide">Probation</span>
+                      <button onClick={() => handleEndProbation(agent.id)} className="text-[10px] text-slate-400 hover:text-slate-700 font-medium transition-colors">End</button>
                     </div>
-                    <button onClick={() => handleApproveTask(agent.id)}
-                      className="shrink-0 bg-slate-900 text-white rounded-xl px-4 py-2 text-xs font-bold hover:bg-emerald-500 transition-all">
-                      Approve
-                    </button>
-                  </div>
-                )}
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />Active
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handleFire(agent.id, agent.name)}
+                    title="Remove agent"
+                    className="ml-1 p-1 text-slate-300 hover:text-rose-400 hover:bg-rose-50 transition-all rounded"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
 
-                {/* Task input */}
-                <div className="mb-4">
+              {/* ── Activity panel (result / running / escalation) ── */}
+              {hasActivity && (
+                <div className="border-t border-slate-100">
+
+                  {/* Running */}
+                  {isDelegating && (
+                    <div className="px-5 pt-4 pb-4">
+                      <DelegationInFlight agentName={agent.name} />
+                    </div>
+                  )}
+
+                  {/* Pending approval */}
+                  {result?.pending_approval && !isDelegating && (
+                    <div className="mx-5 mt-4 border border-amber-200 bg-amber-50 flex items-center justify-between gap-3 px-4 py-3">
+                      <div>
+                        <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 pulse-dot" />Awaiting Approval
+                        </p>
+                        <p className="text-[12px] text-amber-700">Verify output before committing to Dossier.</p>
+                      </div>
+                      <button
+                        onClick={() => handleApproveTask(agent.id)}
+                        className="shrink-0 bg-slate-900 text-white px-4 py-2 text-xs font-semibold hover:bg-emerald-600 transition-all"
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Escalation */}
+                  {result?.escalation && !isDelegating && (
+                    <div className="px-5 pt-4">
+                      <EscalationBanner
+                        escalation={result.escalation}
+                        taskId={result.task_id}
+                        agentId={agent.id}
+                        onResolve={handleEscalationResolve}
+                        isLoading={isDelegating}
+                      />
+                    </div>
+                  )}
+
+                  {/* Result output */}
+                  {result?.result && !isDelegating && !['stop','ask_manager','missing_context'].includes(result?.escalation?.type) && (
+                    <div className="px-5 pt-4 pb-1 animate-fade-in-up">
+                      {parsed?.isA2A
+                        ? <A2APipelineResult parsed={parsed} />
+                        : (
+                          <div className={`border ${result?.escalation?.type === 'risky' ? 'border-orange-200' : 'border-slate-200'}`}>
+                            {/* Result header */}
+                            <div className={`flex items-center justify-between px-3.5 py-2 border-b ${
+                              result?.escalation?.type === 'risky' ? 'bg-orange-50 border-orange-100' : 'bg-slate-50 border-slate-100'
+                            }`}>
+                              <div className="flex items-center gap-2">
+                                <span className={`w-1.5 h-1.5 rounded-full ${result?.escalation?.type === 'risky' ? 'bg-orange-400' : 'bg-emerald-400'}`} />
+                                <span className={`text-[10px] font-semibold uppercase tracking-widest ${result?.escalation?.type === 'risky' ? 'text-orange-600' : 'text-slate-500'}`}>
+                                  {result?.escalation?.type === 'risky' ? 'Risk flagged' : 'Last output'}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-300">Latest run</span>
+                            </div>
+                            {/* Result body */}
+                            <div className="px-3.5 py-3 max-h-44 overflow-y-auto bg-white">
+                              <p className="text-[13px] text-slate-700 leading-relaxed whitespace-pre-wrap">{result.result}</p>
+                            </div>
+                          </div>
+                        )
+                      }
+                    </div>
+                  )}
+
+                  <div className="h-4" />
+                </div>
+              )}
+
+              {/* ── Task compose area ── */}
+              <div className={`px-5 pb-5 flex-1 flex flex-col justify-end ${hasActivity ? '' : 'pt-0'}`}>
+                {!hasActivity && <div className="h-1" />}
+                <div className="border border-slate-200 focus-within:border-slate-400 focus-within:shadow-sm transition-all bg-slate-50 focus-within:bg-white overflow-hidden">
                   <textarea
-                    className="w-full bg-white border border-slate-200 p-4 rounded-2xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none"
+                    className="w-full bg-transparent px-4 pt-3.5 pb-2 outline-none text-[13px] text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
                     rows="2"
-                    placeholder={`Deploy objective to ${agent.name}…`}
+                    placeholder={`Give ${agent.name} an objective…`}
                     value={taskInputs[agent.id] || ''}
                     onChange={e => setTaskInputs(prev => ({ ...prev, [agent.id]: e.target.value }))}
                   />
-                  <div className="flex justify-end mt-2">
+                  <div className="flex items-center justify-between px-3 py-2.5 border-t border-slate-100">
+                    <span className="text-[10px] text-slate-300 select-none">Assign a task or ask a question</span>
                     <button
                       onClick={() => handleTaskAssign(agent.id)}
                       disabled={isDelegating || !taskInputs[agent.id]}
-                      className={`rounded-2xl px-5 py-2.5 text-sm font-bold active:scale-95 transition-all disabled:opacity-30 flex items-center gap-2 ${
-                        isDelegating
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/25'
-                          : 'bg-slate-900 text-white hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/25'
-                      }`}
+                      className="flex items-center gap-1.5 bg-slate-900 text-white px-3.5 py-1.5 text-[12px] font-semibold hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-30"
                     >
-                      {isDelegating ? (
-                        <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Delegating…</>
-                      ) : (
-                        <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>Deploy</>
-                      )}
+                      {isDelegating
+                        ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />Running</>
+                        : <>Run <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14m-7-7l7 7-7 7"/></svg></>
+                      }
                     </button>
                   </div>
                 </div>
+              </div>
 
-                {/* A2A in-flight animation */}
-                {isDelegating && <DelegationInFlight agentName={agent.name} />}
-
-                {/* Escalation banner */}
-                {result?.escalation && !isDelegating && (
-                  <EscalationBanner
-                    escalation={result.escalation}
-                    taskId={result.task_id}
-                    agentId={agent.id}
-                    onResolve={handleEscalationResolve}
-                    isLoading={isDelegating}
-                  />
-                )}
-
-                {/* Result rendering */}
-                {result?.result && !isDelegating && !['stop','ask_manager','missing_context'].includes(result?.escalation?.type) && (
-                  parsed?.isA2A
-                    ? <A2APipelineResult parsed={parsed} />
-                    : (
-                      <div className={`mb-4 rounded-xl overflow-hidden animate-fade-in-up ${result?.escalation?.type === 'risky' ? 'bg-orange-50 border border-orange-100' : 'bg-emerald-50 border border-emerald-100'}`}>
-                        <div className={`px-4 pt-4 pb-1 border-b flex items-center gap-1.5 ${result?.escalation?.type === 'risky' ? 'border-orange-100' : 'border-emerald-100'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full pulse-dot ${result?.escalation?.type === 'risky' ? 'bg-orange-500' : 'bg-emerald-500'}`} />
-                          <span className={`text-xs font-bold uppercase tracking-widest ${result?.escalation?.type === 'risky' ? 'text-orange-700' : 'text-emerald-700'}`}>
-                            {result?.escalation?.type === 'risky' ? '⚠️ Completed with Risk' : 'Execution Output'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 font-medium whitespace-pre-wrap leading-relaxed p-4 max-h-56 overflow-y-auto">{result.result}</p>
-                      </div>
-                    )
-                )}
-
-                {/* Tool assignment */}
-                {userConnectors.length > 0 && (
-                  <div className="mb-3">
+              {/* ── Footer ── */}
+              <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-4">
+                {userConnectors.length > 0 ? (
+                  <div className="flex-1 min-w-0">
                     <button
                       onClick={() => setToolsOpenFor(prev => prev === agent.id ? null : agent.id)}
-                      className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/40 transition-all group">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        <span className="text-xs font-bold text-slate-600 group-hover:text-emerald-700 transition-colors">Allowed Tools</span>
-                        {(agent.allowed_tools || []).length > 0 && (
-                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                            {(agent.allowed_tools || []).length} active
-                          </span>
-                        )}
-                      </div>
-                      <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${toolsOpenFor === agent.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+                      className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-700 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                      Integrations
+                      {toolCount > 0 && (
+                        <span className="ml-0.5 bg-slate-900 text-white text-[9px] font-bold px-1.5 py-px">{toolCount}</span>
+                      )}
+                      <svg className={`w-3 h-3 transition-transform ${toolsOpenFor === agent.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-
                     {toolsOpenFor === agent.id && (
-                      <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">Toggle access to connected tools</p>
+                      <div className="mt-3 pt-3 border-t border-slate-100">
                         <div className="flex flex-wrap gap-1.5">
                           {userConnectors.map(uc => {
                             const connDef = CONNECTORS.find(c => c.id === uc.connector_id);
@@ -672,37 +703,30 @@ export default function TeamTab({
                                 key={uc.connector_id}
                                 onClick={() => {
                                   const current = agent.allowed_tools || [];
-                                  const updated = isEnabled
-                                    ? current.filter(t => t !== uc.connector_id)
-                                    : [...current, uc.connector_id];
+                                  const updated = isEnabled ? current.filter(t => t !== uc.connector_id) : [...current, uc.connector_id];
                                   updateAgentTools?.(agent.id, updated);
                                 }}
-                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
-                                  isEnabled
-                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'
-                                }`}>
-                                <BrandIcon connectorId={uc.connector_id} name={connDef.name} size={14} />
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[11px] font-medium transition-all ${
+                                  isEnabled ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'
+                                }`}
+                              >
+                                <BrandIcon connectorId={uc.connector_id} name={connDef.name} size={12} />
                                 {connDef.name}
-                                {isEnabled && <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>}
+                                {isEnabled && <svg className="w-2.5 h-2.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>}
                               </button>
                             );
                           })}
                         </div>
-                        {userConnectors.length === 0 && (
-                          <p className="text-xs text-slate-400 font-medium">No connectors set up yet. Go to the Connectors page to add integrations.</p>
-                        )}
                       </div>
                     )}
                   </div>
-                )}
-
+                ) : <div />}
                 <button
                   onClick={() => fetchPerformance(agent.id)}
-                  className="w-full border border-slate-200 text-slate-600 rounded-xl py-2.5 text-xs font-bold hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition-all flex items-center justify-center gap-1.5"
+                  className="text-[11px] font-medium text-slate-400 hover:text-slate-900 flex items-center gap-1.5 transition-colors shrink-0"
                 >
-                  View Dossier & Performance
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                  Dossier
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
                 </button>
               </div>
             </div>

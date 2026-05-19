@@ -311,7 +311,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
 
   const handleCreateAgent = async (e) => {
     e.preventDefault();
-    const payload = { name: creatorForm.name, role: creatorForm.role, skills: creatorForm.skills.split(',').map(s => s.trim()), use_cases: creatorForm.use_cases.split(',').map(s => s.trim()), price_credits: parseInt(creatorForm.price_credits) || 10 };
+    const payload = { name: creatorForm.name, role: creatorForm.role, skills: creatorForm.skills.split(',').map(s => s.trim()), use_cases: creatorForm.use_cases.split(',').map(s => s.trim()), price_credits: parseInt(creatorForm.price_credits) || 10, underlying_model: creatorForm.underlying_model || 'gemini-2.5-flash' };
     await fetch(`${apiUrl}/marketplace`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
     setCreatorForm({ name: '', role: '', skills: '', use_cases: '', price_credits: '' });
     fetchWithAuth('/creator/stats').then(setCreatorStats);
@@ -356,101 +356,113 @@ export default function Dashboard({ token, setToken, apiUrl }) {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-white overflow-hidden font-sans">
+      {/* Animated background blobs */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <div className="bg-blob-1 absolute top-[-15%] left-[30%]"
+          style={{ width: 700, height: 700, borderRadius: '50%', background: '#10b981', filter: 'blur(140px)', opacity: 0.045 }} />
+        <div className="bg-blob-2 absolute bottom-[-10%] right-[5%]"
+          style={{ width: 600, height: 600, borderRadius: '50%', background: '#3b82f6', filter: 'blur(130px)', opacity: 0.04 }} />
+      </div>
+
       {complianceAgent && <AIActModal agent={complianceAgent} onClose={() => setComplianceAgent(null)} />}
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* ── Sidebar ── */}
-      <aside className="w-72 flex flex-col pt-6 pb-4 relative z-20" style={{ background: 'radial-gradient(ellipse 120% 60% at 0% 100%, rgba(16,185,129,0.18) 0%, transparent 70%), linear-gradient(155deg, rgba(16,185,129,0.07) 0%, #0f172a 40%), #0f172a' }}>
+      <aside className="w-72 flex flex-col relative bg-white border-r border-slate-200" style={{ zIndex: 10 }}>
 
         {/* Logo */}
-        <div className="px-6 mb-7 relative z-10 flex items-center justify-between">
-          <Logo size="small" dark />
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <Logo size="small" />
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">Live</span>
+          </span>
         </div>
 
-        {/* Credits + Bell */}
-        <div className="px-4 mb-5 relative z-10">
-          <div className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
-            <div className="flex-1">
-              <p className="text-[9px] text-emerald-400/70 font-bold uppercase tracking-widest mb-0.5">Credit Balance</p>
-              <p className="text-2xl font-display font-extrabold text-emerald-400 leading-none tabular-nums">{userInfo?.credit_balance ?? '—'}</p>
-            </div>
-            <div className="relative">
-            <button onClick={() => setShowNotifications(v => !v)} className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/10 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all text-slate-400 hover:text-emerald-400 rounded-xl">
+        {/* Credits */}
+        <div className="flex items-center px-5 py-4 border-b border-slate-100">
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-1">Credits</p>
+            <p className="text-xl font-mono font-bold text-slate-950 leading-none tabular-nums">{userInfo?.credit_balance ?? '—'}</p>
+          </div>
+          <div className="relative">
+            <button onClick={() => setShowNotifications(v => !v)}
+              className="w-8 h-8 flex items-center justify-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all text-slate-400 hover:text-slate-900">
               <BellIcon />
-              {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-slate-900">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">{unreadCount > 9 ? '9+' : unreadCount}</span>}
             </button>
             {showNotifications && (
-              <div className="fixed top-4 right-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-fade-in-up">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
-                  <p className="font-bold text-slate-800 text-sm">Notifications</p>
-                  <button onClick={markAllRead} className="text-xs text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Mark all read</button>
+              <div className="fixed top-0 right-0 w-80 h-screen bg-white shadow-xl border-l border-slate-200 z-50 flex flex-col animate-fade-in-up">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                  <p className="text-sm font-semibold text-slate-900">Notifications</p>
+                  <button onClick={markAllRead} className="text-[9px] font-mono text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors">Mark all read</button>
                 </div>
-                <div className="max-h-72 overflow-y-auto">
-                  {notifications.length === 0 && <p className="text-center text-slate-400 text-sm py-8 font-medium">No notifications yet</p>}
+                <div className="flex-1 overflow-y-auto">
+                  {notifications.length === 0 && <p className="text-center text-slate-400 text-sm py-12">No notifications yet</p>}
                   {notifications.map(n => {
                     const isA2A = n.type === 'a2a_delegation' || n.type === 'a2a_complete';
                     return (
-                      <div key={n.id} className={`px-4 py-3 border-b border-slate-50 text-sm ${
+                      <div key={n.id} className={`px-5 py-3.5 border-b border-slate-100 ${
                         n.read ? 'opacity-40' :
-                        isA2A ? 'bg-indigo-50/60 border-l-2 border-l-indigo-400' :
-                        'bg-emerald-50/50 border-l-2 border-l-emerald-400'
+                        isA2A ? 'border-l-2 border-l-slate-700' :
+                        'border-l-2 border-l-emerald-500'
                       }`}>
-                        <p className={`font-medium leading-snug ${isA2A && !n.read ? 'text-indigo-800' : 'text-slate-700'}`}>{n.message}</p>
-                        <p className="text-slate-400 text-xs mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-slate-800 leading-snug">{n.message}</p>
+                        <p className="text-[10px] font-mono text-slate-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
-            </div>
           </div>
         </div>
 
         {/* Nav */}
-        <div className="flex-1 overflow-y-auto px-2 space-y-0.5 relative z-10">
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5">Workspace</p>
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+          <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest px-2 pb-2">Workspace</p>
           <NavButton active={activeTab==='team'||activeTab==='performance'} onClick={()=>setActiveTab('team')} icon={<TeamIcon/>}>Your Team</NavButton>
           <NavButton active={activeTab==='standup'} onClick={()=>setActiveTab('standup')} icon={<ClockIcon/>}>Daily Standup</NavButton>
           <NavButton active={activeTab==='meeting'} onClick={()=>setActiveTab('meeting')} icon={<MicIcon/>}>
-            <span className="flex items-center gap-2">Meeting Notetaker <span className="text-[8px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded font-bold">STT</span></span>
+            <span className="flex items-center gap-2">Meeting Notetaker <span className="text-[8px] font-mono bg-slate-100 text-slate-500 px-1.5 py-px">STT</span></span>
           </NavButton>
           <NavButton active={activeTab==='history'} onClick={()=>setActiveTab('history')} icon={<HistoryIcon/>}>Task History</NavButton>
           <NavButton active={activeTab==='analytics'} onClick={()=>setActiveTab('analytics')} icon={<ChartIcon/>}>Analytics</NavButton>
 
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5 pt-3">Ecosystem</p>
+          <div className="h-px bg-slate-100 my-3" />
+          <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest px-2 pb-2">Ecosystem</p>
           <NavButton active={activeTab==='marketplace'} onClick={()=>setActiveTab('marketplace')} icon={<ShopIcon/>}>Marketplace</NavButton>
           <NavButton active={activeTab==='creator'} onClick={()=>setActiveTab('creator')} icon={<StarIcon/>}>Creator Studio</NavButton>
           <NavButton active={activeTab==='connectors'} onClick={()=>setActiveTab('connectors')} icon={<LinkIcon/>}>
             <span className="flex items-center gap-2">
               Connectors
-              {userConnectors.length > 0 && <span className="text-[8px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded font-bold">{userConnectors.length}</span>}
+              {userConnectors.length > 0 && <span className="text-[8px] font-mono bg-slate-100 text-slate-600 px-1.5 py-px">{userConnectors.length}</span>}
             </span>
           </NavButton>
           <NavButton active={activeTab==='compliance'} onClick={()=>setActiveTab('compliance')} icon={<ShieldIcon/>}>
             <span className="flex items-center gap-2">
               EU AI Act
-              <span className="text-[8px] bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded font-bold">2024</span>
+              <span className="text-[8px] font-mono bg-slate-100 text-slate-500 px-1.5 py-px">2024</span>
             </span>
           </NavButton>
 
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5 pt-3">Account</p>
+          <div className="h-px bg-slate-100 my-3" />
+          <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest px-2 pb-2">Account</p>
           <NavButton active={activeTab==='settings'} onClick={()=>setActiveTab('settings')} icon={<GearIcon/>}>Settings</NavButton>
         </div>
 
-        {/* Logout */}
-        <div className="px-3 pt-3 border-t border-white/8 relative z-10">
-          <button onClick={logout} className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-slate-500 hover:text-rose-400 hover:bg-rose-500/8 transition-all w-full rounded-xl">
+        {/* Sign out */}
+        <div className="border-t border-slate-100">
+          <button onClick={logout} className="flex items-center gap-3 w-full px-5 py-4 text-sm font-medium text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all">
             <LogoutIcon /> Sign Out
           </button>
         </div>
       </aside>
 
       {/* ── Main ── */}
-      <main className="flex-1 overflow-y-auto bg-slate-50" onClick={() => showNotifications && setShowNotifications(false)}>
-        <div className="max-w-6xl mx-auto px-10 py-12 animate-fade-in-up">
+      <main className="flex-1 overflow-y-auto relative" style={{ zIndex: 1 }} onClick={() => showNotifications && setShowNotifications(false)}>
+        <div className="max-w-6xl mx-auto px-8 py-10 animate-fade-in-up">
           {activeTab === 'team' && (
             <TeamTab
               team={team}

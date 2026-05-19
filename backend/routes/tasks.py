@@ -2,18 +2,15 @@ import re
 import uuid
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
-from google.genai import types
 import models
 import auth
 from database import db
-from shared import genai_client, DELEGATION_MAP, _create_notification, _auto_hire_agent
+from shared import call_model, DELEGATION_MAP, _create_notification, _auto_hire_agent
 
 router = APIRouter(prefix="/api")
 
 @router.post("/tasks/assign/{agent_id}", response_model=models.TaskResponse)
 async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str = Depends(auth.get_current_user)):
-    if not genai_client:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not set on server.")
 
     agent = await db.user_agents.find_one({"id": agent_id, "user_email": current_user})
     if not agent:
@@ -31,6 +28,8 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
                     f"{agent['name']} has passed their 7-day probation period and now operates with full autonomy.")
         except Exception:
             pass
+
+    agent_model = agent.get("underlying_model") or agent.get("compliance", {}).get("underlying_model") or "gemini-2.5-flash"
 
     dossier_text = "\n".join([f"- {d['date']}: {d['skill_acquired']}" for d in agent.get("dossier", [])])
     delegation_skills = ", ".join(DELEGATION_MAP.keys())
@@ -58,11 +57,10 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
         f"Available keys: {delegation_skills}."
     )
 
-    response = genai_client.models.generate_content(
-        model="gemini-2.5-flash", contents=req.task_description,
-        config=types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.3),
-    )
-    result_text = response.text
+    try:
+        result_text = call_model(agent_model, req.task_description, system_prompt, temperature=0.3)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     # ── Parse escalation token from line 1 ──────────────────────────────────
     escalation = None
@@ -135,17 +133,16 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
                     f"⚡ {agent['name']} needs a specialist: hiring {target_agent['name']} for {skill_label}.",
                 )
 
-                t_resp = genai_client.models.generate_content(
-                    model="gemini-2.5-flash", contents=text_to_delegate,
-                    config=types.GenerateContentConfig(
-                        system_instruction=f"You are a specialized {target_agent['role']}. Complete the following task.",
-                        temperature=0.1,
-                    ),
+                target_model = target_agent.get("underlying_model") or "gemini-2.5-flash"
+                t_result = call_model(
+                    target_model, text_to_delegate,
+                    f"You are a specialized {target_agent['role']}. Complete the following task.",
+                    temperature=0.1,
                 )
                 result_text = (
                     f"🔄 **A2A Pipeline: {agent['name']} → {target_agent['name']}**\n\n"
                     f"**Delegated Work:**\n{text_to_delegate}\n\n"
-                    f"**Result from {target_agent['name']}:**\n{t_resp.text.strip()}"
+                    f"**Result from {target_agent['name']}:**\n{t_result}"
                 )
 
                 # Notify user that the pipeline completed
@@ -164,12 +161,14 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
         "escalation": escalation,
     }
 
-    # Extract learning
-    l_resp = genai_client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=f"Task: '{req.task_description}'. Extract ONE brief sentence of new knowledge about company preferences. If nothing specific, reply 'NONE'.",
-    )
-    new_learning = l_resp.text.strip()
+    # Extract learning (always use fast Gemini for this internal extraction)
+    try:
+        new_learning = call_model(
+            "gemini-2.5-flash",
+            f"Task: '{req.task_description}'. Extract ONE brief sentence of new knowledge about company preferences. If nothing specific, reply 'NONE'.",
+        )
+    except Exception:
+        new_learning = "NONE"
     has_learning = "NONE" not in new_learning.upper() and len(new_learning) > 5
 
     pending_approval = False
@@ -228,11 +227,11 @@ async def resolve_escalation(task_id: str, reply: models.EscalationReply, curren
         f"The manager has provided context. Complete the task now."
     )
 
-    response = genai_client.models.generate_content(
-        model="gemini-2.5-flash", contents=enriched,
-        config=types.GenerateContentConfig(system_instruction=system_prompt, temperature=0.3),
-    )
-    result_text = response.text.strip()
+    esc_model = agent.get("underlying_model") or "gemini-2.5-flash"
+    try:
+        result_text = call_model(esc_model, enriched, system_prompt, temperature=0.3)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     await db.tasks.update_one(
         {"task_id": task_id},
