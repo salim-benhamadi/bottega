@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 import models
 import auth
 from database import db
-from shared import genai_client, SPEECHMATICS_API_KEY, _create_notification
+from shared import genai_client, SPEECHMATICS_KEY, _create_notification
 from google.genai import types
 
 router = APIRouter(prefix="/api")
@@ -31,7 +31,7 @@ async def _call_speechmatics(content: bytes, filename: str) -> str:
     async with httpx.AsyncClient(timeout=300.0) as client:
         submit = await client.post(
             "https://asr.api.speechmatics.com/v2/jobs/",
-            headers={"Authorization": f"Bearer {SPEECHMATICS_API_KEY}"},
+            headers={"Authorization": f"Bearer {SPEECHMATICS_KEY}"},
             files={"data_file": (filename, content, "audio/mpeg")},
             data={"config": '{"type":"transcription","transcription_config":{"language":"en","diarization":"speaker"}}'},
         )
@@ -44,7 +44,7 @@ async def _call_speechmatics(content: bytes, filename: str) -> str:
             await asyncio.sleep(5)
             check = await client.get(
                 f"https://asr.api.speechmatics.com/v2/jobs/{job_id}",
-                headers={"Authorization": f"Bearer {SPEECHMATICS_API_KEY}"},
+                headers={"Authorization": f"Bearer {SPEECHMATICS_KEY}"},
             )
             status = check.json().get("job", {}).get("status", "")
             if status == "done":
@@ -54,7 +54,7 @@ async def _call_speechmatics(content: bytes, filename: str) -> str:
 
         txt = await client.get(
             f"https://asr.api.speechmatics.com/v2/jobs/{job_id}/transcript?format=txt",
-            headers={"Authorization": f"Bearer {SPEECHMATICS_API_KEY}"},
+            headers={"Authorization": f"Bearer {SPEECHMATICS_KEY}"},
         )
         return txt.text.strip()
 
@@ -75,7 +75,7 @@ async def transcribe_meeting(req: models.TaskRequest, current_user: str = Depend
     ).to_list(20)
     briefed = [a["name"] for a in user_agents[:5]] if user_agents else []
 
-    transcribed_by = "Speechmatics + Gemini 2.5 Flash" if SPEECHMATICS_API_KEY else "Gemini 2.5 Flash"
+    transcribed_by = "Speechmatics + Gemini 2.5 Flash" if SPEECHMATICS_KEY else "Gemini 2.5 Flash"
     await _create_notification(
         current_user, "task_complete",
         "Meeting Notetaker processed your meeting and auto-briefed your team."
@@ -95,7 +95,7 @@ async def transcribe_audio(
     content = await file.read()
     size_kb = len(content) // 1024
 
-    if SPEECHMATICS_API_KEY:
+    if SPEECHMATICS_KEY:
         try:
             transcript = await _call_speechmatics(content, file.filename)
             speechmatics_live = True
@@ -107,8 +107,8 @@ async def transcribe_audio(
             speechmatics_live = False
     else:
         transcript = (
-            f"[Demo mode — no SPEECHMATICS_API_KEY] '{file.filename}' ({size_kb} KB) received. "
-            "Add SPEECHMATICS_API_KEY to your .env for real transcription. "
+            f"[Demo mode — no SPEECHMATICS_KEY] '{file.filename}' ({size_kb} KB) received. "
+            "Add SPEECHMATICS_KEYto your .env for real transcription. "
             "Paste your transcript text manually to continue."
         )
         speechmatics_live = False
@@ -135,7 +135,7 @@ async def transcribe_full(
     speechmatics_live = False
     transcript = ""
 
-    if SPEECHMATICS_API_KEY:
+    if SPEECHMATICS_KEY:
         try:
             transcript = await _call_speechmatics(content, file.filename)
             speechmatics_live = True
@@ -144,7 +144,7 @@ async def transcribe_full(
     else:
         transcript = (
             f"[Demo transcript for '{file.filename}' ({size_kb} KB)] "
-            "This is a placeholder because no SPEECHMATICS_API_KEY is configured. "
+            "This is a placeholder because no SPEECHMATICS_KEYis configured. "
             "In production, the real speaker-diarized transcript would appear here."
         )
 

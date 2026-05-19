@@ -1,5 +1,6 @@
 import re
 import uuid
+import traceback
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 import models
@@ -61,7 +62,8 @@ async def assign_task(agent_id: str, req: models.TaskRequest, current_user: str 
     try:
         result_text = call_model(agent_model, req.task_description, system_prompt, temperature=0.3)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        traceback.print_exc()   # full traceback in server terminal
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
     # ── Parse escalation token from line 1 ──────────────────────────────────
     escalation = None

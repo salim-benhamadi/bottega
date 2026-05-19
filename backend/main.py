@@ -4,7 +4,7 @@ from database import db
 from shared import SEED_AGENTS
 
 # Import routes
-from routes import auth, user, marketplace, team, tasks, dossier, performance, standup, notifications, creator, transcription, analytics, audit, bundles, connectors, compliance
+from routes import auth, user, marketplace, team, tasks, dossier, performance, standup, notifications, creator, transcription, analytics, audit, bundles, connectors, compliance, orchestrate
 
 app = FastAPI(title="Bottega API")
 
@@ -33,6 +33,7 @@ app.include_router(audit.router)
 app.include_router(bundles.router)
 app.include_router(connectors.router)
 app.include_router(compliance.router)
+app.include_router(orchestrate.router)
 
 @app.on_event("startup")
 async def startup_db_client():
@@ -48,4 +49,14 @@ async def startup_db_client():
     await db.marketplace_agents.update_many(
         {"id": {"$in": [a.id for a in SEED_AGENTS]}},
         {"$set": {"is_official": True}},
+    )
+
+    # Migrate any legacy Gemini 1.5 Pro model references to Gemini 2.5 Flash
+    await db.marketplace_agents.update_many(
+        {"compliance.underlying_model": "Gemini 1.5 Pro"},
+        {"$set": {"compliance.underlying_model": "Gemini 2.5 Flash"}}
+    )
+    await db.user_agents.update_many(
+        {"compliance.underlying_model": "Gemini 1.5 Pro"},
+        {"$set": {"compliance.underlying_model": "Gemini 2.5 Flash"}}
     )

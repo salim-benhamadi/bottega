@@ -1,7 +1,245 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AgentAvatar from '../../components/AgentAvatar';
 import BrandIcon from '../../components/BrandIcon';
 import { CONNECTORS } from './ConnectorsTab';
+
+// ── Orchestrate: multi-agent collaboration panel ────────────────────────────
+
+function OrchestrateProgress() {
+  const [phase, setPhase] = useState(0);
+  const phases = [
+    'Analysing your goal…',
+    'Building agent task plan…',
+    'Agents collaborating…',
+    'Compiling final report…',
+  ];
+  useEffect(() => {
+    const id = setInterval(() => setPhase(p => Math.min(p + 1, phases.length - 1)), 4000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="space-y-2.5 py-2">
+      {phases.map((label, i) => (
+        <div key={i} className={`flex items-center gap-3 transition-all duration-500 ${i <= phase ? 'opacity-100' : 'opacity-20'}`}>
+          <div className={`w-5 h-5 shrink-0 flex items-center justify-center text-[9px] font-bold ${
+            i < phase ? 'bg-emerald-500 text-white' : i === phase ? 'bg-slate-100' : 'bg-slate-50 text-slate-300'
+          }`}>
+            {i < phase ? '✓' : i === phase
+              ? <div className="w-2.5 h-2.5 border border-slate-400 border-t-transparent rounded-full animate-spin" />
+              : String(i + 1).padStart(2, '0')}
+          </div>
+          <span className={`text-xs font-medium ${
+            i === phase ? 'text-slate-800 font-bold' : i < phase ? 'text-slate-400 line-through' : 'text-slate-300'
+          }`}>{label}</span>
+          {i === phase && (
+            <div className="flex gap-0.5 ml-auto">
+              {[0,1,2].map(d => (
+                <span key={d} className="w-1 h-1 bg-emerald-500 animate-bounce" style={{ animationDelay: `${d * 0.15}s` }} />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OrchestrateResult({ result, onReset }) {
+  const [expanded, setExpanded] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    navigator.clipboard?.writeText(result.final_report);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <div className="border-t border-slate-100">
+      {/* Step pipeline */}
+      <div className="px-6 py-4 border-b border-slate-100">
+        <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-3">Agent Pipeline</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          {result.steps.map((step, i) => (
+            <React.Fragment key={i}>
+              <button
+                onClick={() => setExpanded(expanded === i ? null : i)}
+                className={`flex items-center gap-1.5 border px-2.5 py-1.5 text-xs font-medium transition-all ${
+                  step.skipped
+                    ? 'border-slate-100 text-slate-300 cursor-default'
+                    : expanded === i
+                    ? 'border-slate-950 bg-slate-950 text-white'
+                    : 'border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-950'
+                }`}
+              >
+                <span className={`w-4 h-4 flex items-center justify-center text-[9px] font-bold ${
+                  step.skipped ? 'bg-slate-100 text-slate-400' : expanded === i ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-700'
+                }`}>{step.skipped ? '✗' : '✓'}</span>
+                {step.agent_name}
+              </button>
+              {i < result.steps.length - 1 && <span className="text-slate-300 text-xs font-bold">→</span>}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Expanded step detail */}
+        {expanded !== null && result.steps[expanded] && !result.steps[expanded].skipped && (
+          <div className="mt-4 border border-slate-200 overflow-hidden animate-fade-in-up">
+            <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-800">{result.steps[expanded].agent_name}</span>
+              <span className="text-[10px] text-slate-400 font-medium">— {result.steps[expanded].role}</span>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-1">Task assigned</p>
+                <p className="text-xs text-slate-500 italic">{result.steps[expanded].task}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-1">Output</p>
+                <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap max-h-52 overflow-y-auto">
+                  {result.steps[expanded].result}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Final compiled report */}
+      <div className="px-6 py-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Compiled Report</p>
+            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5">
+              {result.title}
+            </span>
+          </div>
+          <button onClick={onReset}
+            className="text-[10px] font-medium text-slate-400 hover:text-slate-950 transition-colors">
+            New mission →
+          </button>
+        </div>
+        <div className="bg-slate-50 border border-slate-200 p-5 max-h-96 overflow-y-auto">
+          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{result.final_report}</p>
+        </div>
+        <button onClick={copy}
+          className="mt-3 text-[10px] font-medium text-slate-400 hover:text-emerald-600 transition-colors uppercase tracking-widest">
+          {copied ? '✓ Copied' : 'Copy report'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function OrchestratePanel({ team, apiUrl = '' }) {
+  const [goal, setGoal]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult]   = useState(null);
+  const [error, setError]     = useState('');
+  const textareaRef = useRef(null);
+
+  const submit = async () => {
+    if (!goal.trim() || loading) return;
+    setLoading(true); setResult(null); setError('');
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 180_000); // 3-min timeout
+      const res = await fetch(`${apiUrl}/orchestrate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ goal: goal.trim() }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error(`Server error (${res.status}) — the orchestration may have timed out. Try a simpler goal.`);
+      }
+      if (!res.ok) throw new Error(data?.detail || `Orchestration failed (${res.status})`);
+      setResult(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mb-8 border border-slate-200 overflow-hidden">
+      <div className="h-[2px] bg-emerald-500" />
+
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+        <div className="w-1 h-5 bg-emerald-500 shrink-0" />
+        <span className="text-xs font-bold text-slate-950 uppercase tracking-widest">Mission Control</span>
+        <span className="text-[10px] font-medium text-slate-400 border border-slate-200 px-2 py-0.5">
+          Multi-agent orchestration
+        </span>
+        {team.length === 0 && (
+          <span className="ml-auto text-[10px] text-amber-600 font-medium">Hire agents first to use this feature</span>
+        )}
+      </div>
+
+      {/* Input row */}
+      <div className="p-6">
+        <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-2.5">
+          Describe any goal — your agents will collaborate automatically
+        </p>
+        <div className="flex gap-3 items-start">
+          <textarea
+            ref={textareaRef}
+            value={goal}
+            onChange={e => setGoal(e.target.value)}
+            rows={2}
+            disabled={loading}
+            placeholder='e.g. "Prepare a full pitch package for a German manufacturing client" or "Build a 4-week content calendar for B2B SaaS"'
+            className="flex-1 bg-white border border-slate-200 px-4 py-3 text-sm focus:border-slate-400 outline-none transition-all resize-none placeholder-slate-300 text-slate-800 font-medium disabled:opacity-50"
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(); }}
+          />
+          <button
+            onClick={submit}
+            disabled={!goal.trim() || loading || team.length === 0}
+            className="bg-slate-950 text-white px-5 py-3 text-sm font-medium hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-40 shrink-0 flex items-center gap-2"
+          >
+            {loading
+              ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  Orchestrate
+                </>
+            }
+          </button>
+        </div>
+        <p className="text-[10px] text-slate-300 mt-2">⌘ Enter to submit</p>
+      </div>
+
+      {/* Loading */}
+      {loading && (
+        <div className="border-t border-slate-100 px-6 pb-6">
+          <OrchestrateProgress />
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="border-t border-red-100 bg-red-50 px-6 py-4 text-xs text-red-600 font-medium flex items-center gap-2">
+          <span className="w-1 h-4 bg-red-400 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Result */}
+      {result && <OrchestrateResult result={result} onReset={() => { setResult(null); setGoal(''); }} />}
+    </div>
+  );
+}
 
 // Parse the structured A2A result text produced by tasks.py
 function parseA2AResult(text) {
@@ -429,6 +667,7 @@ export default function TeamTab({
   saveOrgStructure,
   userConnectors = [],
   updateAgentTools,
+  apiUrl = '',
 }) {
   const [viewMode, setViewMode] = useState('grid');
   const [toolsOpenFor, setToolsOpenFor] = useState(null);
@@ -455,6 +694,9 @@ export default function TeamTab({
           )}
         </div>
       </div>
+
+      {/* Mission Control — multi-agent orchestration */}
+      {viewMode === 'grid' && team.length > 0 && <OrchestratePanel team={team} apiUrl={apiUrl} />}
 
       {team.length > 0 && (
         <div className="flex items-center gap-2 mb-8 flex-wrap">

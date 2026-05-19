@@ -481,6 +481,7 @@ export default function Dashboard({ token, setToken, apiUrl }) {
               saveOrgStructure={saveOrgStructure}
               userConnectors={userConnectors}
               updateAgentTools={handleUpdateAgentTools}
+              apiUrl={apiUrl}
             />
           )}
 

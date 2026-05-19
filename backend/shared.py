@@ -11,7 +11,7 @@ from database import db
 load_dotenv()
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-SPEECHMATICS_API_KEY = os.environ.get("SPEECHMATICS_API_KEY")
+SPEECHMATICS_KEY= os.environ.get("SPEECHMATICS_KEY")
 FEATHERLESS_KEY = os.environ.get("FEATHERLESS_KEY")
 FEATHERLESS_BASE = "https://api.featherless.ai/v1"
 
@@ -21,14 +21,43 @@ genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 def call_model(model: str, user_prompt: str, system_prompt: str = "", temperature: float = 0.3) -> str:
     """Route a generation call to Gemini or Featherless depending on the model name."""
     model = model or "gemini-2.5-flash"
-    if model.startswith("gemini"):
+
+    # Normalise human-readable display names → valid API model IDs
+    # e.g. "Gemini 2.5 Flash" → "gemini-2.5-flash"
+    if model.lower().startswith("gemini"):
+        # The current API key only has quota and access for gemini-2.5-flash on the free tier.
+        # Other models (like pro models or other versions) return 429/404 errors.
+        model = "gemini-2.5-flash"
+
+    if model.lower().startswith("gemini"):
         if not genai_client:
             raise RuntimeError("GEMINI_API_KEY not set")
-        cfg = types.GenerateContentConfig(temperature=temperature)
-        if system_prompt:
-            cfg = types.GenerateContentConfig(system_instruction=system_prompt, temperature=temperature)
-        resp = genai_client.models.generate_content(model=model, contents=user_prompt, config=cfg)
-        return resp.text.strip()
+        
+        # Try a list of fallback models in case the primary one is rate-limited or experiencing high demand (503/429)
+        models_to_try = [model, "gemini-flash-latest", "gemini-flash-lite-latest"]
+        last_err = None
+        for m in models_to_try:
+            try:
+                cfg_kwargs = {"temperature": temperature}
+                if system_prompt:
+                    cfg_kwargs["system_instruction"] = system_prompt
+                cfg = types.GenerateContentConfig(**cfg_kwargs)
+                resp = genai_client.models.generate_content(model=m, contents=user_prompt, config=cfg)
+                text = resp.text
+                if text is None:
+                    # Fallback: stitch text parts manually (e.g. when thinking tokens are present)
+                    try:
+                        text = "".join(
+                            p.text for p in resp.candidates[0].content.parts
+                            if getattr(p, "text", None)
+                        )
+                    except Exception:
+                        text = ""
+                return text.strip()
+            except Exception as e:
+                last_err = e
+                continue
+        raise last_err
     else:
         if not FEATHERLESS_KEY:
             raise RuntimeError("FEATHERLESS_KEY not set")
