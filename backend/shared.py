@@ -28,6 +28,8 @@ def call_model(model: str, user_prompt: str, system_prompt: str = "", temperatur
         # The current API key only has quota and access for gemini-2.5-flash on the free tier.
         # Other models (like pro models or other versions) return 429/404 errors.
         model = "gemini-2.5-flash"
+    elif "mixtral-8x7b-instruct-v0.1" in model.lower() or "mixtral 8x7b" in model.lower():
+        model = "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
 
     if model.lower().startswith("gemini"):
         if not genai_client:
