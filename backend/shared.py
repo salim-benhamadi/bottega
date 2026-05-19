@@ -18,7 +18,7 @@ FEATHERLESS_BASE = "https://api.featherless.ai/v1"
 genai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 
-def call_model(model: str, user_prompt: str, system_prompt: str = "", temperature: float = 0.3) -> str:
+def call_model(model: str, user_prompt: str, system_prompt: str = "", temperature: float = 0.3, response_mime_type: str = None) -> str:
     """Route a generation call to Gemini or Featherless depending on the model name."""
     model = model or "gemini-2.5-flash"
 
@@ -43,6 +43,8 @@ def call_model(model: str, user_prompt: str, system_prompt: str = "", temperatur
                 cfg_kwargs = {"temperature": temperature}
                 if system_prompt:
                     cfg_kwargs["system_instruction"] = system_prompt
+                if response_mime_type:
+                    cfg_kwargs["response_mime_type"] = response_mime_type
                 cfg = types.GenerateContentConfig(**cfg_kwargs)
                 resp = genai_client.models.generate_content(model=m, contents=user_prompt, config=cfg)
                 text = resp.text

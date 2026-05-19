@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 import models
 import auth
 from database import db
-from shared import genai_client, SPEECHMATICS_KEY, _create_notification
+from shared import genai_client, SPEECHMATICS_KEY, _create_notification, call_model
 from google.genai import types
 
 router = APIRouter(prefix="/api")
@@ -64,11 +64,15 @@ async def transcribe_meeting(req: models.TaskRequest, current_user: str = Depend
     if not genai_client:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not set on server.")
 
-    resp = genai_client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=req.task_description,
-        config=types.GenerateContentConfig(system_instruction=ANALYSIS_PROMPT, temperature=0.2),
-    )
+    try:
+        result_text = call_model(
+            model="gemini-2.5-flash",
+            user_prompt=req.task_description,
+            system_prompt=ANALYSIS_PROMPT,
+            temperature=0.2
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Gemini error: {e}")
 
     user_agents = await db.user_agents.find(
         {"user_email": current_user}, {"name": 1}
@@ -81,7 +85,7 @@ async def transcribe_meeting(req: models.TaskRequest, current_user: str = Depend
         "Meeting Notetaker processed your meeting and auto-briefed your team."
     )
     return models.TranscribeResponse(
-        result=resp.text,
+        result=result_text,
         transcribed_by=transcribed_by,
         briefed_agents=briefed,
     )
@@ -148,11 +152,15 @@ async def transcribe_full(
             "In production, the real speaker-diarized transcript would appear here."
         )
 
-    resp = genai_client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=transcript,
-        config=types.GenerateContentConfig(system_instruction=ANALYSIS_PROMPT, temperature=0.2),
-    )
+    try:
+        result_text = call_model(
+            model="gemini-2.5-flash",
+            user_prompt=transcript,
+            system_prompt=ANALYSIS_PROMPT,
+            temperature=0.2
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Gemini error: {e}")
 
     user_agents = await db.user_agents.find(
         {"user_email": current_user}, {"name": 1}
@@ -167,7 +175,7 @@ async def transcribe_full(
 
     return {
         "transcript": transcript,
-        "result": resp.text,
+        "result": result_text,
         "transcribed_by": transcribed_by,
         "briefed_agents": briefed,
         "speechmatics_live": speechmatics_live,

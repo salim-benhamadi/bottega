@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Any
 import auth
 from database import db
-from shared import genai_client
+from shared import genai_client, call_model
 
 router = APIRouter(prefix="/api")
 
@@ -120,8 +120,10 @@ async def creator_converse(req: ConverseRequest, current_user: str = Depends(aut
         contents.append(f"{'User' if role == 'user' else 'Assistant'}: {text}")
 
     full_prompt = "\n\n".join(contents)
-    resp = genai_client.models.generate_content(model="gemini-2.5-flash", contents=full_prompt)
-    reply_text = resp.text.strip()
+    try:
+        reply_text = call_model(model="gemini-2.5-flash", user_prompt=full_prompt).strip()
+    except Exception as e:
+        return {"reply": f"AI Generation error: {e}. Please try again shortly.", "draft": {}, "complete": False}
 
     draft = _extract_draft(reply_text)
     complete = reply_text.startswith("DONE:")
